@@ -1,0 +1,392 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+    /* تحسين التنسيق العام */
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        direction: rtl;
+        text-align: right;
+    }
+
+    /* تغليف الفاتورة */
+    .invoice-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        padding: 20px;
+    }
+
+    .invoice-container {
+        width: 850px;
+        background-color: #fff;
+        padding: 7px 20px;
+        border: 1px solid #ccc;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* تحسين الجدول */
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .table, th, .td {
+
+    }
+
+    .td {
+        text-align: right;
+        padding: 8px !important;
+                border: 1px solid #ddd;
+
+    }
+    
+     .tdd{
+        padding: 6px !important;
+                border: 1px solid #ddd;
+
+    }
+    th, .th td {
+        border-bottom: 2px solid #333 !important;
+
+        border: 2px solid #333;
+
+    }
+
+    /* زر الطباعة */
+    .print-button {
+        display: block;
+        margin: 15px auto;
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: 0.3s;
+        border-radius: 5px;
+    }
+
+    .print-button:hover {
+        background-color: #0056b3;
+    }
+
+    /* تنسيقات الطباعة */
+    @media print {
+        /* إخفاء جميع أجزاء النظام */
+        body * {
+            visibility: hidden;
+        }
+
+        /* عرض الفاتورة فقط */
+        .invoice-wrapper, .invoice-wrapper * {
+            visibility: visible;
+        }
+
+        .invoice-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+        }
+
+        /* إخفاء زر الطباعة عند الطباعة */
+        .print-button {
+            display: none;
+        }
+    }
+
+
+    
+    /* ===== إعدادات الطباعة (A4 عمودي) ===== */
+    @media print {
+        .invoice-container {
+          width: 100% !important;
+          border: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-shadow: none !important;
+          page-break-inside: avoid;
+          overflow: visible !important;
+        }
+        html, body {
+          width: 100%;
+          height: auto;
+          margin: 0;
+          padding: 0;
+        }
+        @page {
+          size: A4 portrait;
+          margin: 10mm;
+        }
+      }
+</style>
+
+<div class="container-xxl flex-grow-1 container-p-y">
+
+
+    <div class="row">
+        <div class="col-12">
+        <div class="card shadow-sm mb-4">
+           
+
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">{{ title }}</h4>
+                <i class="fas fa-file-invoice-dollar me-2"></i> تفاصيل الفاتورة: {{ invoice.invoice_number }}
+
+                <div>
+
+                {% if invoice.invoice_type == 'sales' %}  
+                    <a href="{% url 'edit_sales_invoice' invoice.id %}" class="btn btn-warning me-2">  
+                        <i class="fas fa-edit me-1"></i> تعديل مبيعات  
+                    </a>  
+                {% elif invoice.invoice_type == 'purchase' %}  
+                    <a href="{% url 'edit_purchase_invoice' invoice.id %}" class="btn btn-info me-2">  
+                        <i class="fas fa-edit me-1"></i> تعديل مشتريات  
+                    </a>  
+                {% elif invoice.invoice_type == 'sales_return' %}  
+                    <a href="{% url 'update_sales_return_invoice' invoice.id %}" class="btn btn-success me-2">  
+                        <i class="fas fa-edit me-1"></i> تعديل ائتمانات  
+                    </a>  
+                {% else %}  
+                    <a href="" class="btn btn-secondary me-2">  
+                        <i class="fas fa-edit me-1"></i> تعديل أخرى  
+                    </a>  
+                
+                {% endif %}
+
+                
+                  <!-- زر للطباعة (يمكن ربطه بصفحة طباعة أو استخدام جافاسكريبت window.print()) -->
+                  <button type="button" class="btn btn-primary" onclick="window.print();">
+                    <span class="tf-icons bx bx-printer"></span>&nbsp; طباعة الفاتورة             
+                     </button>
+                </div>
+              </div>
+        </div>
+        </div>
+    </div>
+
+
+      
+    <!-- زر طباعة الفاتورة -->
+
+    <!-- حاوية الفاتورة -->
+    <div class="invoice-wrapper" dir="">
+        <div class="invoice-container">
+            <hr style="border: 1px solid black; margin: .1rem 0 !important;">
+            <hr style="border: 1px solid black; margin: .1rem 0 !important;">
+
+            <!-- الجزء العلوي (بيانات الشركة) -->
+            <div style="text-align: center; margin-bottom: 10px; margin-top : 10px; ">
+                <p style="font-weight: bold; font-size: 22px;">  {{ invoice.company.name }}</p>
+                <div class="header">
+                    <h2>شركة الفارس التجارية</h2>
+                    <p>جدة، المملكة العربية السعودية</p>
+                    <p>هاتف: 6483056 - الرقم الضريبي: 310803950100003</p>
+                    <h3>فاتورة ضريبية</h3>
+                </div>
+                <p>هاتف  {{ invoice.company.address }}     | البلد {{ invoice.company.phone }} | الرقم الضريبي: {{ invoice.company.vat_number }}</p>
+            </div>
+            <hr style="border: 1px solid black; margin: .1rem 0 !important;">
+            <hr style="border: 1px solid black; margin: .1rem 0 !important;">
+
+            <!-- عنوان الفاتورة -->
+            <div style="text-align: center; margin-bottom: 15px;">
+                <p style="font-size: 22px; font-weight: bold; letter-spacing: 1px; color: #0026ff;">فاتورة ضريبية</p>
+            
+                <div style="
+                    display: inline-block;
+                    border: 2px solid #0026ff;
+                    padding: 5px 15px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #0026ff;
+                    border-radius: 8px;">
+                    فاتورة: <span style="font-weight: bold;"> {{ invoice.get_invoice_type_display }} {{ invoice.payment_method }}</span>
+                </div>
+            </div>
+            
+
+            <!-- معلومات العميل والفاتورة -->
+            <table class="table" >
+                
+                <tr style="text-align: right;" class="th">
+                    <td class="td"><strong>رقم العميل:</strong> 4104</td>
+                    <td class="td"><strong>الرقم الضريبي للعميل:</strong> {{ invoice.customer.vat_number }}</td>
+                </tr>
+                                    <tr style="height:10px;"></tr>
+
+                <tr class="th">
+                    <td class="td"><strong>اسم العميل:</strong> {{ invoice.customer.name }}</td>
+                    <td class="td"><strong>رقم الفاتورة:</strong> {{ invoice.invoice_number }}</td>
+                </tr class="th">
+                                    <tr style="height:10px;"></tr>
+
+                <tr class="th">
+                    <td class="td"><strong>عنوان العميل:</strong></td>
+                    <td class="td"><strong>التاريخ:</strong> {{ invoice.invoice_date|date:"d/m/Y" }}</td>
+                </tr>
+            </table>
+
+            
+
+            <!-- جدول البنود -->
+            <table class="table">
+                <thead>
+                    <tr >
+                        <th style='font-size: 16px;
+                        font-weight: bold;
+                        letter-spacing: 1px;
+                        color: #0026ff;'>م</th>
+                        <th style='font-size: 16px;
+                        font-weight: bold;
+                        letter-spacing: 1px;
+                        color: #0026ff;'>رقم الصنف</th>
+                        <th style='font-size: 16px;
+                        font-weight: bold;
+                        letter-spacing: 1px;
+                        color: #0026ff;'>الوصف</th>
+                        <th style='font-size: 16px;
+                        font-weight: bold;
+                        letter-spacing: 1px;
+                        color: #0026ff;'>الكمية</th>
+                        <th style='font-size: 16px;
+                        font-weight: bold;
+                        letter-spacing: 1px;
+                        color: #0026ff;'>السعر</th>
+                        <th style='font-size: 16px;
+                        font-weight: bold;
+                        letter-spacing: 1px;
+                        color: #0026ff;'>الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in invoice.invoice_items.all %}
+                    
+                    <tr>
+                        <td class="td">{{ forloop.counter }}</td>
+                        <td class="td">{{ item.product.serial_number }}</td>
+                        <td class="td">{{ item.product.name_ar }}</td>
+                        <td class="td">{{ item.quantity|floatformat:0 }}</td>
+                        <td class="td">{{ item.unit_price|floatformat:2 }}</td>
+                        <td class="td">{{ item.total|floatformat:2 }}</td>
+                    </tr>
+                    <tr style="height:10px;"></tr>
+
+                    {% endfor %}
+
+                </tbody>
+            </table>
+
+       <!-- الملخص المالي -->
+        <table style="width: 100%; border-collapse: collapse; text-align: right;" class="table">
+            <tr>
+                <td class="tdd" style="width: 30%; font-weight: bold;">الإجمالي</td>
+                <td class="tdd" style="width: 70%; text-align: right;">
+                    {{ invoice.subtotal_before_discount|floatformat:2 }}  
+                     <span style="color: #555; margin-right: 20px;">{{ subtotal_words }}</span>
+                </td>
+            </tr>
+
+            <tr>
+                <td class="tdd" style="font-weight: bold;">الخصم</td>
+                <td class="tdd" style="text-align: right; margin-right: 20px;">
+                    {{ invoice.discount|floatformat:2 }}   
+                    {% if invoice.discount != 0 %}
+                    <span style="color: #555; margin-right: 20px;">{{ discount_words }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <td class="tdd" style="font-weight: bold;">الإجمالي بعد الخصم</td>
+                <td class="tdd" style="text-align: right;">
+                    {{ invoice.subtotal_before_tax|floatformat:2 }}  
+                     <span style="color: #555; margin-right: 20px;">{{ subtotal_after_discount_words }}</span>
+                </td>
+            </tr>
+
+            <tr>
+                <td class="tdd" style="font-weight: bold;">ضريبة القيمة المضافة (15%)</td>
+                <td class="tdd" style="text-align: right;">
+                    {{ invoice.tax_amount|floatformat:2 }}  
+                     <span style="color: #555; margin-right: 20px;">{{ tax_words }}</span>
+                </td>
+            </tr>
+
+            <tr>
+                <td class="tdd" style="font-weight: bold;">المستحق</td>
+                <td class="tdd" style="text-align: right; ">
+                    {{ invoice.total_amount|floatformat:2 }}  
+                     <span style="color: #555; margin-right: 20px;">{{ total_words }}</span>
+                </td>
+            </tr>
+        </table>
+
+
+            <!-- القسم السفلي -->
+        
+
+            <!-- القسم السفلي -->
+            <div style="margin-top: 20px; border:none !important; padding-top: 10px;">
+                <table style="width: 100%; border-collapse: collapse; text-align: center;">
+                    <tr>
+                        <!-- العمود الأيمن (البائع) -->
+                        <td style="width: 30%; text-align: right; font-size: 16px; color: #0026ff; font-weight: bold;">
+                           <div>
+                            <span>البائع:</span>
+                            <span style="display: inline-block; width: 75%; border-bottom: 1px dashed #000; margin-right: 10px;"></span>
+                        </div>
+
+                            <div style="margin-top: 20px; display: block;">
+                                    <span >:التوقيع</span> <!-- يمكنك تعديل الرقم حسب الرغبة -->  
+                                    <span style="display: inline-block; width: 75%; border-bottom: 1px dashed #000; margin-right: 10px; margin-top: 10px;"></span>  
+                                </div>
+                        </td>
+                        {% if invoice.qr_code %}
+
+                        <!-- العمود الأوسط (QR Code) -->
+                        <td style="width: 40%; text-align: center;">
+                            <img src="{{ invoice.qr_code.url }}" alt="QR Code" style="max-width: 150px;">
+                        </td>
+                        {% endif%}
+                        <!-- العمود الأيسر (المستلم) -->
+                        <td style="width: 30%; text-align: left; font-size: 16px; color: #0026ff; font-weight: bold;">
+                            <div>  
+                            <span>:البائع</span>
+                                <span style="display: inline-block; width: 75%; border-bottom: 1px dashed #000; margin-right: 10px; margin-top: 10px;"></span>  
+                              </div>
+                              <div style="margin-top: 20px; display: block;">
+                                <span >:التوقيع</span> <!-- يمكنك تعديل الرقم حسب الرغبة -->  
+                                <span style="display: inline-block; width: 75%; border-bottom: 1px dashed #000; margin-right: 10px; margin-top: 10px;"></span>  
+                                </div>
+                        
+                        
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+
+        </div>
+    </div>
+
+</div>
+
+<!-- سكربت الطباعة -->
+<script>
+    function printInvoice() {
+        window.print();
+    }
+</script>
+
+{% endblock %}

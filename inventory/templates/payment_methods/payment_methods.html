@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h2 class="mb-4 text-center">{{ title|default:"إدارة طرق الدفع (AJAX + Modal)" }}</h2>
+  
+  <!-- زر لإضافة طريقة دفع جديدة (يفتح الـModal فارغة) -->
+  <div class="text-end mb-3">
+    <button class="btn btn-primary" id="btnAddNew">
+      <i class="fas fa-plus"></i> إضافة طريقة دفع جديدة
+    </button>
+  
+  <!-- جدول عرض طرق الدفع -->
+
+
+
+  
+  <div class="card">
+    <h5 class="card-header">طرق الدفع</h5>
+    <div class="table-responsive text-nowrap">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>الاسم بالعربي</th>
+                    <th>الاسم بالإنجليزي</th>
+                    <th>الوصف</th>
+                    <th>الحالة</th>
+                    <th style="width: 200px;">الإجراء</th>
+                </tr>
+            </thead>
+            <tbody class="table-border-bottom-0">
+                {% for method in methods %}
+                <tr id="row-{{ method.id }}">
+                    <td class="td-name_ar">{{ method.name_ar }}</td>
+                    <td class="td-name_en">{{ method.name_en|default:"-" }}</td>
+                    <td class="td-description">{{ method.description|default:"-" }}</td>
+                    <td class="td-status"></td>
+                    <td>
+                      <button class="btn btn-sm btn-warning btnEdit" data-id="{{ method.id }}">
+                        تعديل
+                      </button>
+                      <button class="btn btn-sm btn-danger btnDelete" data-id="{{ method.id }}">
+                        حذف
+                      </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">لا توجد طرق دفع</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+  
+ 
+</div>
+
+<!-- نافذة منبثقة (Modal) لإضافة/تعديل طريقة الدفع -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <!-- نموذح HTML مع حقول طريقة الدفع -->
+      <form id="paymentForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="paymentModalLabel">طريقة دفع جديدة</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body">
+          <!-- حقل مخفي للتعديل -->
+          <input type="hidden" name="edit_id" id="editIdInput" value="">
+          
+          <!-- الحقول -->
+          <div class="mb-3">
+            <label for="id_name_ar" class="form-label">الاسم بالعربي</label>
+            <input type="text" class="form-control" name="name_ar" id="id_name_ar">
+            <div class="text-danger small" id="err_name_ar"></div>
+          </div>
+          <div class="mb-3">
+            <label for="id_name_en" class="form-label">الاسم بالإنجليزي</label>
+            <input type="text" class="form-control" name="name_en" id="id_name_en">
+            <div class="text-danger small" id="err_name_en"></div>
+          </div>
+          <div class="mb-3">
+            <label for="id_description" class="form-label">الوصف</label>
+            <textarea class="form-control" name="description" id="id_description" rows="2"></textarea>
+            <div class="text-danger small" id="err_description"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+          <button type="submit" class="btn btn-primary" id="btnSave">حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- تحميل مكتبة Axios من CDN -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+// مسارات AJAX (حسب ما عرّفتها في urls.py)
+const createOrUpdateURL = "{% url 'ajax_create_or_update_payment_method' %}";
+const deleteURL = "{% url 'ajax_delete_payment_method' %}";
+
+// تهيئة الـModal بواسطة Bootstrap
+var paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'), {});
+
+// دالة لإخفاء الأخطاء
+function clearErrors() {
+  document.getElementById('err_name_ar').innerText = "";
+  document.getElementById('err_name_en').innerText = "";
+  document.getElementById('err_description').innerText = "";
+}
+
+// زر "إضافة طريقة دفع جديدة" => يفتح الـModal فارغ
+document.getElementById('btnAddNew').addEventListener('click', function() {
+  document.getElementById('paymentModalLabel').innerText = "إضافة طريقة دفع جديدة";
+  document.getElementById('editIdInput').value = "";
+  document.getElementById('id_name_ar').value = "";
+  document.getElementById('id_name_en').value = "";
+  document.getElementById('id_description').value = "";
+  clearErrors();
+  paymentModal.show();
+});
+
+// اضافة حدث زر تعديل لكل صف
+document.querySelectorAll('.btnEdit').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    let rowId = this.dataset.id;
+    let row = document.getElementById('row-' + rowId);
+    
+    let name_ar = row.querySelector('.td-name_ar').innerText.trim();
+    let name_en = row.querySelector('.td-name_en').innerText.trim();
+    let description = row.querySelector('.td-description').innerText.trim();
+    
+    // تعبئة بيانات الـModal
+    document.getElementById('paymentModalLabel').innerText = "تعديل طريقة الدفع";
+    document.getElementById('editIdInput').value = rowId;
+    document.getElementById('id_name_ar').value = (name_ar === '-' ? '' : name_ar);
+    document.getElementById('id_name_en').value = (name_en === '-' ? '' : name_en);
+    document.getElementById('id_description').value = (description === '-' ? '' : description);
+    
+    clearErrors();
+    paymentModal.show();
+  });
+});
+
+// اضافة حدث زر حذف
+document.querySelectorAll('.btnDelete').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    if(!confirm("هل أنت متأكد من الحذف؟")) return;
+    let deleteId = this.dataset.id;
+    
+    let formData = new FormData();
+    formData.append('delete_id', deleteId);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    axios.post(deleteURL, formData)
+      .then(response => {
+        if(response.data.status === 'success') {
+          document.getElementById('row-' + deleteId).remove();
+          alert("تم الحذف بنجاح!");
+        } else {
+          alert("حدث خطأ أثناء الحذف.");
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        alert("خطأ في الاتصال بالسيرفر.");
+      });
+  });
+});
+
+// عند حفظ النموذج (إنشاء/تعديل) داخل الـModal
+document.getElementById('paymentForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  clearErrors();
+  
+  let formData = new FormData(this); // يحتوي على (edit_id, name_ar, name_en, description, csrf_token, ...)
+  
+  axios.post(createOrUpdateURL, formData)
+    .then(response => {
+      let data = response.data;
+      if(data.status === 'success') {
+        // إما إضافة أو تعديل
+        let rowId = data.id;
+        let existingRow = document.getElementById('row-' + rowId);
+        
+        if(!existingRow) {
+          // صف جديد
+          let newRow = document.createElement('tr');
+          newRow.id = 'row-' + rowId;
+          newRow.innerHTML = `
+            <td class="td-name_ar">${data.name_ar}</td>
+            <td class="td-name_en">${data.name_en || '-'}</td>
+            <td class="td-description">${data.description || '-'}</td>
+            <td>
+              <button class="btn btn-sm btn-warning btnEdit" data-id="${rowId}">تعديل</button>
+              <button class="btn btn-sm btn-danger btnDelete" data-id="${rowId}">حذف</button>
+            </td>
+          `;
+          // نضيف الصف الجديد في بداية الجدول (أو نهايته)
+          document.querySelector('#paymentTable tbody').prepend(newRow);
+        } else {
+          // تعديل صف موجود
+          existingRow.querySelector('.td-name_ar').innerText = data.name_ar;
+          existingRow.querySelector('.td-name_en').innerText = data.name_en || '-';
+          existingRow.querySelector('.td-description').innerText = data.description || '-';
+        }
+        
+        // اغلاق الـModal
+        paymentModal.hide();
+        alert("تم الحفظ بنجاح!");
+        
+        // إعادة ربط الأحداث
+        rebindTableButtons();
+      }
+      else if(data.status === 'error') {
+        // عرض الأخطاء
+        let errors = data.errors;
+        if(errors.name_ar) document.getElementById('err_name_ar').innerText = errors.name_ar;
+        if(errors.name_en) document.getElementById('err_name_en').innerText = errors.name_en;
+        if(errors.description) document.getElementById('err_description').innerText = errors.description;
+      }
+    })
+    .catch(error => {
+      console.error(error);
+      alert("حدث خطأ أثناء الاتصال بالسيرفر.");
+    });
+});
+
+// دالة تعيد ربط أحداث أزرار التعديل والحذف في حال تم إضافة / تعديل صف
+function rebindTableButtons() {
+  document.querySelectorAll('.btnEdit').forEach(function(btn) {
+    btn.onclick = function() {
+      let rowId = this.dataset.id;
+      let row = document.getElementById('row-' + rowId);
+
+      let name_ar = row.querySelector('.td-name_ar').innerText.trim();
+      let name_en = row.querySelector('.td-name_en').innerText.trim();
+      let description = row.querySelector('.td-description').innerText.trim();
+      
+      document.getElementById('paymentModalLabel').innerText = "تعديل طريقة الدفع";
+      document.getElementById('editIdInput').value = rowId;
+      document.getElementById('id_name_ar').value = (name_ar === '-' ? '' : name_ar);
+      document.getElementById('id_name_en').value = (name_en === '-' ? '' : name_en);
+      document.getElementById('id_description').value = (description === '-' ? '' : description);
+      
+      clearErrors();
+      paymentModal.show();
+    };
+  });
+
+  document.querySelectorAll('.btnDelete').forEach(function(btn) {
+    btn.onclick = function() {
+      if(!confirm("هل أنت متأكد من الحذف؟")) return;
+      let deleteId = this.dataset.id;
+      
+      let formData = new FormData();
+      formData.append('delete_id', deleteId);
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+      
+      axios.post(deleteURL, formData)
+        .then(response => {
+          if(response.data.status === 'success') {
+            document.getElementById('row-' + deleteId).remove();
+            alert("تم الحذف بنجاح!");
+          } else {
+            alert("خطأ أثناء الحذف.");
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          alert("خطأ في الاتصال بالسيرفر.");
+        });
+    };
+  });
+}
+</script>
+{% endblock %}

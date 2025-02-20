@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>فاتورة ضريبية</title>
+  <style>
+    /* الأساسيات */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background-color: #fff;
+      direction: rtl;
+    }
+    .invoice-container {
+      width: 800px;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      padding: 15px 20px;
+      position: relative;
+      overflow: visible; /* لمنع قص أي جزء عند الطباعة */
+      background-color: #fff;
+    }
+
+    /* ===== رأس الفاتورة ===== */
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .header-col {
+      width: 33%;
+    }
+    .header-col-left {
+      text-align: left;
+    }
+    .header-col-middle {
+      text-align: center;
+      font-size: 3.5em;
+      font-weight: bold;
+      color: #333;
+      line-height: 1;
+    }
+    .header-col-right {
+      text-align: right;
+    }
+    /* تنسيقات نصوص الرأس */
+    .header-col-left h3,
+    .header-col-right h3 {
+      margin: 0;
+      font-size: 1.1em;
+      font-weight: bold;
+    }
+    .header-col-left h4,
+    .header-col-right h4 {
+      margin: 2px 0;
+      font-size: 1em;
+      color: #555;
+      font-weight: normal;
+    }
+    .header-col-left p,
+    .header-col-right p {
+      margin: 2px 0;
+      font-size: 0.9em;
+      color: #555;
+    }
+    .divider {
+      margin: 10px 0;
+      border-top: 2px solid #000;
+    }
+
+    /* ===== عنوان الفاتورة ===== */
+    .invoice-title {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 1.1em;
+      font-weight: bold;
+    }
+
+    /* ===== معلومات الفاتورة ===== */
+    .invoice-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 0.9em;
+    }
+    .invoice-info .info-col {
+      width: 48%;
+    }
+    .invoice-info p {
+      margin: 3px 0;
+      color: #333;
+    }
+
+    /* ===== الجدول الرئيسي (تفاصيل البنود) ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+      font-size: 0.9em;
+    }
+    table thead th {
+      background-color: #f0f0f0;
+      padding: 8px;
+      border: 1px solid #ccc;
+      text-align: center;
+      font-weight: bold;
+    }
+    table tbody td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    /* ===== الملخص المالي ===== */
+    .summary-table {
+      width: 50%;
+      margin-left: auto;
+      border-collapse: collapse;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+    .summary-table td {
+      padding: 5px 10px;
+    }
+    .summary-table tr td:first-child {
+      text-align: left;
+    }
+    .summary-table tr td:last-child {
+      text-align: right;
+    }
+    .summary-table .total-row {
+      font-weight: bold;
+      border-top: 2px solid #000;
+    }
+
+    /* ===== المبلغ بالحروف ===== */
+    .amount-words {
+      text-align: center;
+      margin: 10px 0;
+      font-size: 0.9em;
+      font-weight: bold;
+    }
+
+    /* ===== قسم التوقيعات (محسّن ليطابق الصورة) ===== */
+    .signatures {
+      margin-top: 20px;
+    }
+    .signatures .sig-row {
+      display: flex;
+      justify-content: space-between;
+    }
+    .sign-box {
+      width: 40%;
+      text-align: center;
+    }
+    .sign-box p {
+      margin-bottom: 5px;
+      font-size: 0.9em;
+    }
+    .sign-line {
+      border-bottom: 1px dashed #ccc;
+      width: 100%;
+      height: 0;
+      margin: 0 auto;
+    }
+
+    /* ===== القسم السفلي: باركود + البنكين + وقت الطباعة + رقم الصفحة ===== */
+    .bottom-section {
+      margin-top: 20px;
+      border-top: 1px solid #000;
+      padding-top: 10px;
+    }
+    .bottom-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    .qr-code-box {
+      width: 100px;
+      height: 100px;
+      border: 1px solid #000;
+      background-color: #f8f8f8;
+      display: flex;
+      align-items: left;
+      justify-content: end;
+      flex-shrink: 0;
+    }
+    .banks-container {
+      flex: 1;
+      margin: 0 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .bank-box {
+      text-align: right;
+      font-size: 0.9em;
+      width: 48%;
+    }
+    .bank-box p {
+      margin: 3px 0;
+    }
+    .bank-box strong {
+      font-size: 0.95em;
+    }
+    .bottom-footer {
+      margin-top: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8em;
+    }
+
+    /* ===== إعدادات الطباعة (A4 عمودي) ===== */
+    @media print {
+      .invoice-container {
+        width: 100% !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        overflow: visible !important;
+      }
+      html, body {
+        width: 100%;
+        height: auto;
+        margin: 0;
+        padding: 0;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 10mm;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="invoice-container">
+  <!-- ====== رأس الفاتورة ====== -->
+  <div class="header-top">
+    <!-- العمود الأيسر (إنجليزي) -->
+    <div class="header-col header-col-left">
+      <h3>Hamad M.Naga Al-Ghamdi Trading Est</h3>
+      <h4>Style Fabric</h4>
+      <p>VAT: 311128669300003</p>
+      <p>Jeddah - Albalad Market</p>
+    </div>
+    <!-- العمود الأوسط (حرف S) -->
+    <div class="header-col header-col-middle">
+      S
+    </div>
+    <!-- العمود الأيمن (عربي) -->
+    <div class="header-col header-col-right">
+      <h3>مؤسسة حمد مسفر نجا الغامدي للتجارة</h3>
+      <h4>ستايل للأقمشة</h4>
+      <p>311128669300003</p>
+      <p>جدة - البلد</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ====== عنوان الفاتورة ====== -->
+  <div class="invoice-title">
+    فاتورة ضريبية / نقدي / عادية
+  </div>
+
+  <!-- ====== معلومات الفاتورة ====== -->
+  <div class="invoice-info">
+    <div class="info-col">
+      <p>رقم الفاتورة: <strong>{{ invoice.invoice_number }}</strong></p>
+      <p>البائع: <strong>{{ invoice.company.name }}</strong></p>
+      <p>الرقم الضريبي: <strong>{{ invoice.company.tax_number }}</strong></p>
+    </div>
+    <div class="info-col" style="text-align: right;">
+      <p>السادة: <strong>{{ invoice.customer.name }}</strong></p>
+      <p>التاريخ: <strong>{{ invoice.invoice_date|date:"d/m/Y" }}</strong></p>
+      <p>الرقم الضريبي: <strong>{{ invoice.customer.tax_number|default:"-" }}</strong></p>
+    </div>
+  </div>
+
+  <div class="divider" style="border-top: 1px solid #999; margin-bottom: 5px;"></div>
+  <p style="text-align: center; margin: 5px 0;"><strong>البيان:</strong></p>
+
+  <!-- ====== جدول البنود ====== -->
+  <table>
+    <thead>
+      <tr>
+        <th width="10%">تسلسل</th>
+        <th width="40%">البيان</th>
+        <th width="10%">باردة</th>
+        <th width="10%">طاقة</th>
+        <th width="15%">الأفرادي</th>
+        <th width="15%">مبلغ الضريبة</th>
+        <th width="15%">الإجمالي</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in invoice.invoice_items.all %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>
+          {{ item.product.name_ar }}
+          {% if item.product.description_ar %}
+            -- {{ item.product.description_ar }}
+          {% endif %}
+        </td>
+        <td>{{ item.base_unit.abbreviation }}</td>
+        <td>{{ item.quantity|floatformat:2 }}</td>
+        <td>{{ item.unit_price|floatformat:2 }}</td>
+        <td>{{ item.tax_amount|floatformat:2 }}</td>
+        <td>{{ item.total_with_tax|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- ====== الملخص المالي ====== -->
+  <table class="summary-table">
+    <tr>
+      <td>إجمالي الكمية</td>
+      <td>{{ invoice.total_quantity|floatformat:2 }}</td>
+    </tr>
+    <tr>
+      <td>المجموع الجزئي فاتورة</td>
+      <td>{{ invoice.subtotal_before_tax|floatformat:2 }}</td>
+    </tr>
+    <tr>
+      <td>ضريبة القيمة المضافة</td>
+      <td>{{ invoice.tax_amount|floatformat:2 }}</td>
+    </tr>
+    <tr class="total-row">
+      <td>الصافي</td>
+      <td>{{ invoice.total_amount|floatformat:2 }}</td>
+    </tr>
+  </table>
+
+  <!-- ====== المبلغ بالحروف ====== -->
+  <div class="amount-words">
+    المبلغ المطلوب: {{ invoice.total_amount_in_words_ar }}
+  </div>
+
+  <!-- ====== قسم التوقيعات (نفس أسلوب الصورة) ====== -->
+  <div class="signatures">
+    <div class="sig-row">
+      <!-- توقيع المستلم -->
+      <div class="sign-box">
+        <p>اسم وتوقيع المستلم</p>
+        <div class="sign-line"></div>
+      </div>
+      <!-- توقيع من قام بالإعداد -->
+      <div class="sign-box">
+        <p>أعدت من قبل</p>
+        <div class="sign-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== القسم السفلي: باركود على اليسار + البنكين + وقت الطباعة + رقم الصفحة ====== -->
+  <div class="bottom-section">
+    <div class="bottom-row">
+     
+      <!-- معلومات البنكين في المنتصف -->
+      <div class="banks-container">
+        <!-- البنك الأهلي -->
+        <div class="bank-box">
+          <p><strong>البنك الأهلي</strong></p>
+          <p>الاسم: مؤسسة حمد مسفر نجا الغامدي التجارية</p>
+          <p>رقم الحساب: 01400014058607</p>
+          <p>رقم الابيان: SA9180000453608010477547</p>
+        </div>
+        <!-- بنك الراجحي -->
+        <div class="bank-box">
+          <p><strong>بنك الراجحي</strong></p>
+          <p>الاسم: مؤسسة حمد مسفر نجا الغامدي التجارية</p>
+          <p>رقم الحساب: 453608010477547</p>
+          <p>رقم الابيان: SA9180000453608010477547</p>
+        </div>
+      </div>
+
+
+      
+    </div>
+    <!-- السطر الأخير: وقت الطباعة + رقم الصفحة -->
+    <div class="bottom-footer">
+      <div>
+        PrintedOn: 02/02/2025 &nbsp; Time: 09:37 p
+      </div>
+      <div>
+        1
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<script>
+  // للطباعة التلقائية إن أردت
+ window.addEventListener("load", function() {
+   window.print();
+  });
+</script>
+</body>
+</html>

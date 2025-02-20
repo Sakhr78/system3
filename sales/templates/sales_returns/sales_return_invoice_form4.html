@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+  <!-- قائمة التنقل -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#">المحاسبة</a></li>
+      <li class="breadcrumb-item"><a href="#">الفواتير</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ page_title }}</li>
+    </ol>
+  </nav>
+
+  <!-- عرض الرسائل إن وجدت -->
+  {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- نموذج الفاتورة -->
+  <form method="post" id="salesReturnForm" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="d-flex justify-content-between mb-2">
+      <h3>فاتورة مرتجع مبيعات</h3>
+      <div>
+      <!--  <button type="submit" name="save" class="btn btn-primary me-2">حفظ مسودة</button>  -->
+        <button type="submit" name="finalize" class="btn btn-success me-2">إتمام الفاتورة</button>
+        <a href="#" class="btn btn-secondary">إلغاء</a>
+      </div>
+    </div>
+
+    <!-- قسم اختيار الفاتورة الأصلية -->
+    <div class="card mb-4">
+      <div class="card-header bg-info text-white">اختيار الفاتورة الأصلية</div>
+      <div class="card-body">
+        <select class="form-control select2" id="originalInvoiceSelect">
+          <option value="">-- اختر فاتورة مبيعات --</option>
+          {% for inv in sales_invoices %}
+          <option value="{% url 'create_sales_return_with_original' inv.id %}" 
+                  {% if original_invoice and original_invoice.id == inv.id %}selected{% endif %}>
+              {{ inv.invoice_number }} - {{ inv.customer.name }} ({{ inv.invoice_date|date:"Y-m-d" }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    
+
+    {% if original_invoice %}
+    <div class="row">
+      <!-- الجانب الأيسر: البيانات الأساسية -->
+      <div class="col-md-8">
+        {{ form.original_id }}
+        <div class="card mb-4">
+          <div class="card-header bg-primary text-white">البيانات الأساسية</div>
+          <div class="card-body">
+            <div class="row g-3">
+              <!-- حقل العميل مع تعطيله -->
+              <div class="col-md-6">
+                <label class="form-label" for="id_customer">العميل</label>
+                {{ form.customer }}
+                {{ form.customer.as_hidden }}
+              </div>
+              
+              <div class="col-md-6">
+                <label for="{{ form.invoice_number.id_for_label }}">رقم الفاتورة</label>
+                {{ form.invoice_number }}
+              </div>
+              <div class="col-md-6">
+                <label for="{{ form.invoice_date.id_for_label }}">تاريخ الفاتورة</label>
+                {{ form.invoice_date }}
+              </div>
+              <div class="col-md-6">
+                <label for="{{ form.payment_method.id_for_label }}">طريقة الدفع</label>
+                {{ form.payment_method }}
+              </div>
+              <div class="col-md-6">
+                <label for="{{ form.return_reason.id_for_label }}">سبب المرتجع</label>
+                {{ form.return_reason }}
+              </div>
+              <div class="col-md-6">
+                <label for="{{ form.discount_percentage.id_for_label }}">نسبة الخصم (%)</label>
+                {{ form.discount_percentage }}
+              </div>
+              {# الحقول الحسابية المخفية #}
+              {{ form.subtotal_before_discount.as_hidden }}
+              {{ form.discount.as_hidden }}
+              {{ form.subtotal_before_tax.as_hidden }}
+              {{ form.tax_rate.as_hidden }}
+              {{ form.tax_amount.as_hidden }}
+              {{ form.total_amount.as_hidden }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- الجانب الأيمن: ملخص الحسابات -->
+      <div class="col-md-4">
+        <div class="card border-info mb-4">
+          <div class="card-header bg-info text-white">ملخص الحسابات</div>
+          <div class="card-body">
+            <table class="table table-sm table-bordered mb-0">
+              <tr>
+                <th>قيمة الإجمالي</th>
+                <td id="total-value" class="text-end">0.00 ر.س</td>
+              </tr>
+              <tr>
+                <th>نسبة الخصم (%)</th>
+                <td id="discount-percentage" class="text-end">{{ form.discount_percentage.value|default:'0' }}</td>
+              </tr>
+              <tr>
+                <th>قيمة الخصم</th>
+                <td id="discount-value" class="text-end">0.00 ر.س</td>
+              </tr>
+              <tr>
+                <th>قيمة الصافي</th>
+                <td id="net-value" class="text-end">0.00 ر.س</td>
+              </tr>
+              <tr>
+                <th>قيمة الضريبة</th>
+                <td id="tax-value" class="text-end">0.00 ر.س</td>
+              </tr>
+              <tr class="bg-primary text-white">
+                <th>قيمة الفاتورة</th>
+                <td id="invoice-value" class="text-end">0.00 ر.س</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- جدول البنود -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card mb-4">
+          <div class="card-body">
+            <table class="table table-hover" id="invoiceItemsTable">
+              <thead>
+                <tr class="bg-light">
+                  <th>المنتج</th>
+                  <th>الكمية الأصلية</th>
+                  <th>الكمية المرتجعة</th>
+                  <th>السعر</th>
+                  <th>المجموع</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for f in formset %}
+
+               
+
+              
+                <tr>
+                  <td>
+                    {# يتم إظهار حقل المنتج المخفي وحقل الاسم للعرض #}
+                    {{ f.product }}
+                    {{ f.product_name }}
+                  </td>
+                  <td>
+                    {# عرض الكمية الأصلية، تأكد من تمرير القيمة في initial البيانات (original_quantity) #}
+                    {{ f.original_quantity }}
+                  </td>
+                  <td>
+                    {{ f.quantity }}
+                  </td>
+                  <td>
+                    {{ f.unit_price }}
+                  </td>
+                  <td class="item-total">0.00</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {{ formset.management_form }}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </form>
+</div>
+
+<!-- كود جافا سكريبت لحساب المجاميع -->
+<script>
+$(document).ready(function(){
+  // إعادة التوجيه عند اختيار فاتورة أصلية
+  $('#originalInvoiceSelect').change(function() {
+    if($(this).val()) window.location.href = $(this).val();
+  });
+
+  function calculateTotals(){
+    let subtotal = 0;
+    // المرور على كل صف في جدول البنود لحساب قيمة كل بند
+    $("#invoiceItemsTable tbody tr").each(function(){
+      const $row = $(this);
+      const qty = parseFloat($row.find('[name$="-quantity"]').val()) || 0;
+      const price = parseFloat($row.find('[name$="-unit_price"]').val()) || 0;
+      let lineTotal = qty * price;
+      subtotal += lineTotal;
+      $row.find('.item-total').text(lineTotal.toFixed(2) + " ر.س");
+    });
+    $("#total-value").text(subtotal.toFixed(2) + " ر.س");
+
+    // قراءة نسبة الخصم من الحقل (يفترض أن يكون معرفه id_discount_percentage)
+    let discountPercentage = parseFloat($('#id_discount_percentage').val()) || 0;
+    $("#discount-percentage").text(discountPercentage);
+
+    // حساب قيمة الخصم
+    let discountValue = subtotal * discountPercentage / 100;
+    $("#discount-value").text(discountValue.toFixed(2) + " ر.س");
+
+    // حساب قيمة الصافي بعد الخصم
+    let netValue = subtotal - discountValue;
+    $("#net-value").text(netValue.toFixed(2) + " ر.س");
+
+    // قراءة نسبة الضريبة من الحقل المخفي (id_tax_rate)
+    let taxRate = parseFloat($('#id_tax_rate').val()) || 0;
+    let taxValue = netValue * taxRate / 100;
+    $("#tax-value").text(taxValue.toFixed(2) + " ر.س");
+
+    // حساب قيمة الفاتورة النهائية
+    let invoiceValue = netValue + taxValue;
+    $("#invoice-value").text(invoiceValue.toFixed(2) + " ر.س");
+  }
+
+  // إعادة الحساب عند تغيير الكمية، نسبة الخصم أو نسبة الضريبة
+  $(document).on('input', '[name$="-quantity"], #id_discount_percentage, #id_tax_rate', calculateTotals);
+  
+  calculateTotals();
+});
+
+</script>
+
+
+  
+{% endblock %}

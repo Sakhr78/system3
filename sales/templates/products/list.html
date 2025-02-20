@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  <!-- شريط التنقل العلوي (Breadcrumb) -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#">المحاسبة</a></li>
+      <li class="breadcrumb-item"><a href="#">المنتجات</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+    </ol>
+  </nav>
+
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">{{ title }}</h4>
+      <form method="post" action="{% url 'delete_all_products' %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">
+          <i class="fas fa-trash"></i> حذف جميع المنتجات
+        </button>
+      </form>
+    </div>
+    <div class="card-body">
+      <!-- جدول المنتجات -->
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>رقم المنتج</th>
+              <th>اسم المنتج</th>
+              <th>السعر</th>
+              <th>المخزون</th>
+              <th class="text-center">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in products %}
+            <tr>
+              <td>{{ product.id }}</td>
+              <td>{{ product.name }}</td>
+              <td>{{ product.price }}</td>
+              <td>{{ product.stock }}</td>
+              <td class="text-center">
+                <a href="{% url 'product_detail' product.id %}" class="btn btn-sm btn-info me-1" title="عرض المنتج">
+                  <i class="fas fa-eye"></i>
+                </a>
+                <a href="{% url 'edit_product' product.id %}" class="btn btn-sm btn-warning" title="تعديل المنتج">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <form method="post" action="{% url 'delete_product' product.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-danger" title="حذف المنتج">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

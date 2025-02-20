@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>فاتورة ضريبية</title>
+    <style>
+        /* --- الأساسيات --- */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif; /* خط Arial - الأكثر تطابقاً مع الصورة */
+            background-color: #fff;
+            direction: rtl;
+            line-height: 1.5; /* تحسين تباعد الأسطر */
+        }
+        .invoice-container {
+            width: 780px;
+            margin: 20px auto;
+            border: 1px solid #000;
+            padding: 20px 30px;
+            position: relative;
+            overflow: visible;
+            background-color: #fff;
+            box-shadow: 0 0 5px rgba(0,0,0,0.05);
+        }
+
+        /* --- ترويسة الشركة (مُطورة) --- */
+        .company-header {
+            text-align: center;
+            margin-bottom: 5px; /* تقليل المسافة أسفل العنوان */
+        }
+        .company-name {
+            font-weight: bold;
+            font-size: 25px; /* حجم خط أكبر لاسم الشركة */
+            margin: 8px 0 5px 0; /* مسافات معدلة حول اسم الشركة */
+        }
+        .company-info {
+            font-size: 15px;
+            margin: 0;
+            color: #444; /* لون أغمق قليلاً لمعلومات الشركة */
+        }
+
+        /* --- الخط الفاصل (مُطور) --- */
+        .header-separator {
+            border-top: 2px solid #000; /* خط أكثر سمكاً */
+            margin: 10px 0 20px 0; /* مسافات معدلة حول الخط الفاصل */
+        }
+
+        /* --- عنوان الفاتورة (مُطور) --- */
+        .invoice-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .main-title {
+            font-weight: bold;
+            font-size: 28px; /* حجم خط أكبر لـ "فاتورة ضريبية" */
+            margin: 6px 0; /* مسافات معدلة لعنوان الفاتورة الرئيسي */
+        }
+        .sub-title {
+            font-size: 18px;
+            margin: 0;
+            color: #666; /* لون أغمق قليلاً لـ "فاتورة مبيعات نقدية" */
+        }
+
+        /* --- جدول المعلومات العامة --- */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 22px;
+        }
+        .info-table td {
+            border: 1px solid black;
+            padding: 7px 9px;
+            font-size: 14px;
+            vertical-align: top;
+        }
+        .info-table td:first-child {
+            width: 28%;
+            font-weight: bold;
+            background-color: #f8f8f8;
+        }
+
+        /* --- جدول البنود --- */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 28px;
+        }
+        .items-table thead th {
+            background-color: #f0f0f0;
+            font-size: 15px;
+            padding: 9px 10px;
+            border: 1px solid black;
+            font-weight: bold;
+        }
+        .items-table th,
+        .items-table td {
+            border: 1px solid black;
+            padding: 9px 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .items-table th:nth-child(3), /* عمود الوصف */
+        .items-table td:nth-child(3) {
+            text-align: right;
+            padding-right: 15px;
+        }
+
+        /* --- الملخص المالي --- */
+        .summary-table {
+            width: 55%;
+            margin-left: auto;
+            border-collapse: collapse;
+            font-size: 15px;
+            margin-top: 22px;
+        }
+        .summary-table td {
+            border: 1px solid black;
+            padding: 7px 11px;
+        }
+        .summary-table tr td:first-child {
+            text-align: left;
+            font-weight: bold;
+            background-color: #f8f8f8;
+        }
+        .summary-table tr td:last-child {
+            text-align: right;
+        }
+        .summary-table .total-row {
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+
+        /* --- تذييل الفاتورة --- */
+        .invoice-footer {
+            margin-top: 25px;
+            border-top: 2px solid #000;
+            padding-top: 12px;
+        }
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .footer-table td {
+            vertical-align: middle;
+            font-size: 14px;
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+        .footer-table td:nth-child(2) {
+            text-align: center;
+        }
+        .footer-table td:first-child {
+            text-align: right;
+            width: 30%;
+        }
+        .footer-table td:last-child {
+            text-align: left;
+            width: 30%;
+        }
+        .footer-table .signature-line {
+            border-bottom: 1px dashed #999;
+            padding-bottom: 2px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+
+        /* --- إعدادات الطباعة --- */
+        @media print {
+            .invoice-container {
+                width: 100% !important;
+                border: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                page-break-inside: avoid;
+                overflow: visible !important;
+            }
+            html, body {
+                width: 100%;
+                height: auto;
+                margin: 0;
+                padding: 0;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="invoice-container">
+    <div class="company-header">
+        <p class="company-name">شركة الفارس التجارية</p>
+        <p class="company-info">
+            جدة البلد | س ت 4030381251 | هاتف 6483056 | الرقم الضريبي: 310803950100003
+        </p>
+    </div>
+    <hr class="header-separator">
+    <div class="invoice-title">
+        <p class="main-title">فاتورة ضريبية</p>
+        <p class="sub-title">فاتورة : مبيعات نقدية</p>
+    </div>
+
+    <table class="info-table">
+        <tr>
+            <td>رقم العميل</td>
+            <td>4104</td>
+            <td>الرقم الضريبي للعميل</td>
+            <td>300308974300003</td>
+        </tr>
+        <tr>
+            <td>اسم العميل</td>
+            <td colspan="3">مؤسسة قمة كيان التجارية</td>
+        </tr>
+        <tr>
+            <td>عنوان العميل</td>
+            <td></td>
+            <td>رقم الفاتورة</td>
+            <td>21233</td>
+        </tr>
+        <tr>
+            <td></td><td></td>
+            <td>التاريخ</td>
+            <td>2023-07-16</td>
+        </tr>
+    </table>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>م</th>
+                <th>رقم الصنف</th>
+                <th>الوصف</th>
+                <th>الكمية</th>
+                <th>السعر</th>
+                <th>الإجمالي</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>WZ0266</td>
+                <td>فستان نسائي</td>
+                <td>80</td>
+                <td>95.00</td>
+                <td>7,600.00</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>WZ0267</td>
+                <td>فستان نسائي</td>
+                <td>80</td>
+                <td>90.50</td>
+                <td>7,240.00</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>WZ0268</td>
+                <td>جلابيه مشجر</td>
+                <td>60</td>
+                <td>88.00</td>
+                <td>5,280.00</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>WZ0269</td>
+                <td>جلابيه نسائي</td>
+                <td>60</td>
+                <td>88.00</td>
+                <td>5,280.00</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td>WZ0270</td>
+                <td>فستان نسائي</td>
+                <td>40</td>
+                <td>96.00</td>
+                <td>3,840.00</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td>WZ0272</td>
+                <td>فستان نسائي</td>
+                <td>120</td>
+                <td>90.00</td>
+                <td>10,800.00</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td>WZ0273</td>
+                <td>فستان لول</td>
+                <td>120</td>
+                <td>90.00</td>
+                <td>10,800.00</td>
+            </tr>
+            <tr>
+                <td>8</td>
+                <td>WZ0278</td>
+                <td>جلابيه نسائي</td>
+                <td>60</td>
+                <td>84.00</td>
+                <td>5,040.00</td>
+            </tr>
+            <tr>
+                <td>9</td>
+                <td>WZ0279</td>
+                <td>جلابيه نسائي</td>
+                <td>50</td>
+                <td>110.00</td>
+                <td>5,500.00</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="summary-table">
+        <tr>
+            <td>الإجمالي</td>
+            <td>61,380.00</td>
+        </tr>
+        <tr>
+            <td>الخصم</td>
+            <td>0.00</td>
+        </tr>
+        <tr class="total-row">
+            <td>الإجمالي بعد الخصم</td>
+            <td>61,380.00</td>
+        </tr>
+        <tr>
+            <td>ضريبة القيمة المضافة 15%</td>
+            <td>9.207.00</td>
+        </tr>
+        <tr class="total-row">
+            <td>المستحق</td>
+            <td>70,587.00</td>
+        </tr>
+    </table>
+
+    <div class="invoice-footer">
+        <table class="footer-table">
+            <tr>
+                <td>البائع :</td>
+                <td rowspan="2" style="text-align: center;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png" alt="QR Code" style="max-width: 120px;">
+                </td>
+                <td>المستلم :</td>
+            </tr>
+            <tr>
+                <td><span class="signature-line"></span></td>
+                <td><span class="signature-line"></span></td>
+            </tr>
+             <tr>
+                <td style="text-align: right; padding-top: 0;">التوقيع :</td>
+                <td style="text-align: center; padding-top: 0;"></td>
+                <td style="text-align: left; padding-top: 0;">التوقيع :</td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>

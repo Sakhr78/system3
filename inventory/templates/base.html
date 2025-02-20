@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}نظام إدارة الفواتير{% endblock %}</title>
+    
+    <!-- Bootstrap 5 RTL CSS -->
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+<!-- في <head> -->
+    <!-- قبل إغلاق </body> -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Cairo', sans-serif;
+        }
+        .sidebar {
+            height: 100vh;
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            transition: all 0.3s;
+        }
+        .content {
+            margin-right: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar-menu li {
+            margin-bottom: 10px;
+        }
+        .sidebar-menu a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 10px 15px;
+            transition: background-color 0.3s;
+        }
+        .sidebar-menu a:hover {
+            background-color: #34495e;
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .navbar {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+
+</head>
+<body>
+
+
+    {% if form.errors or formset.errors %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+  <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> يوجد أخطاء في البيانات المدخلة:</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  
+  <!-- أخطاء النموذج الرئيسي -->
+  {% if form.non_field_errors %}
+  <div class="mb-3">
+    <h6>أخطاء عامة:</h6>
+    <ul>
+      {% for error in form.non_field_errors %}
+        <li>{{ error }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- أخطاء الحقول الفردية -->
+  {% for field in form %}
+    {% if field.errors %}
+    <div class="mb-2">
+      <strong>{{ field.label }}:</strong>
+      <ul class="mb-0">
+        {% for error in field.errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  {% endfor %}
+
+  <!-- أخطاء الـ Formset -->
+  {% for form_in_formset in formset %}
+    {% if form_in_formset.errors %}
+    <div class="mb-2 border-top pt-2">
+      <strong>عنصر {{ forloop.counter }}:</strong>
+      <ul class="mb-0">
+        {% for error in form_in_formset.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+        {% for field in form_in_formset %}
+          {% for error in field.errors %}
+            <li>{{ field.label }}: {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar">
+                <div class="p-4">
+                    <h3 class="text-center mb-4">
+                        <i class="fas fa-receipt"></i> نظام الفواتير
+                    </h3>
+                    <ul class="sidebar-menu">
+                        <li>
+                            <a href="{% url 'invoice_dashboard' %}">
+                                <i class="fas fa-tachometer-alt"></i> لوحة التحكم
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'create_invoice' %}">
+                                <i class="fas fa-plus-circle"></i> إنشاء فاتورة
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'invoice_list' %}">
+                                <i class="fas fa-list-alt"></i> قائمة الفواتير
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#">
+                                <i class="fas fa-chart-pie"></i> التقارير
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#">
+                                <i class="fas fa-cog"></i> الإعدادات
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-10 content">
+                <!-- Navbar -->
+                <nav class="navbar navbar-expand-lg navbar-light bg-white">
+                    <div class="container-fluid">
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="navbarNav">
+                            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#">
+                                        <i class="fas fa-bell"></i> الإشعارات
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#">
+                                        <i class="fas fa-user"></i> الملف الشخصي
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-danger" href="#">
+                                        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Page Content -->
+                <div id="mainContent">
+                    {% block content %}{% endblock %}
+                  </div>
+                
+                </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+
+    <!-- Bootstrap 5 JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    
+    <!-- jQuery (optional, but useful for some interactions) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // أي تفاعلات عامة للموقع
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+
+    <!-- في <head> -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+...
+<!-- قبل إغلاق </body> -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+<!-- تضمين Bootstrap JS وAxios -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  // استخدم event delegation على document أو على العنصر الثابت "content"
+  document.body.addEventListener("click", function(e){
+    // ابحث عن أقرب رابط يحمل الصنف "ajax-link"
+    const link = e.target.closest("a.ajax-link");
+    if(link){
+      e.preventDefault();
+      const url = link.href;
+      fetch(url, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      })
+      .then(response => response.text())
+      .then(html => {
+        // استخدم DOMParser لاستخراج المحتوى داخل العنصر الذي يحمل id="content" من الصفحة الكاملة
+        let parser = new DOMParser();
+        let doc = parser.parseFromString(html, "text/html");
+        let newContent = doc.getElementById("content").innerHTML;
+        document.getElementById("content").innerHTML = newContent;
+        history.pushState(null, "", url);
+      })
+      .catch(error => console.error("Error fetching page: ", error));
+    }
+  });
+  
+  // عند الضغط على زر الرجوع/التقدم
+  window.addEventListener("popstate", function(e){
+    fetch(location.href, {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(response => response.text())
+    .then(html => {
+      let parser = new DOMParser();
+      let doc = parser.parseFromString(html, "text/html");
+      let newContent = doc.getElementById("content").innerHTML;
+      document.getElementById("content").innerHTML = newContent;
+    })
+    .catch(error => console.error("Error fetching page: ", error));
+  });
+});
+</script>
+{% endblock %}
+
+
+<script src="https://unpkg.com/htmx.org@1.9.2"></script>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+
+</body>
+</html>

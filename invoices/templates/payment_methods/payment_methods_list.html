@@ -1,0 +1,27 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th>الاسم بالعربي</th>
+            <th>الاسم بالإنجليزي</th>
+            <th>الوصف</th>
+            <th>الإجراء</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for method in methods %}
+        <tr>
+            <td>{{ method.name_ar }}</td>
+            <td>{{ method.name_en|default:"-" }}</td>
+            <td>{{ method.description|default:"-" }}</td>
+            <td>
+                <button class="btn btn-sm btn-warning btnEditPayment" data-id="{{ method.id }}">تعديل</button>
+                <button class="btn btn-sm btn-danger btnDeletePayment" data-id="{{ method.id }}">حذف</button>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">لا توجد طرق دفع</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

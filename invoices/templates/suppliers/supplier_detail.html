@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  /* التنسيق العام لصفحة التفاصيل */
+  .supplier-detail-container {
+      direction: rtl;
+      text-align: right;
+      font-family: 'Arial', sans-serif; /* يمكنك استبداله بخط عربي مسجّل */
+      color: #333;
+      background-color: #fff;
+      margin: 20px auto;
+      padding: 20px;
+      max-width: 900px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  .supplier-detail-header {
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+  }
+  .supplier-detail-header h2 {
+      font-size: 28px;
+      color: #007bff;
+      margin: 0;
+  }
+  .supplier-detail-header p {
+      font-size: 14px;
+      margin: 5px 0;
+  }
+  .supplier-detail-body p {
+      font-size: 14px;
+      margin: 0 0 8px;
+  }
+  .supplier-detail-label {
+      font-weight: bold;
+      color: #555;
+  }
+  .supplier-section {
+      margin-bottom: 20px;
+  }
+  /* تقسيم بيانات العنوان في صفوف منفصلة */
+  .supplier-address .row > div {
+      margin-bottom: 10px;
+  }
+  /* استجابة الأجهزة */
+  @media (max-width: 768px) {
+      .supplier-detail-container {
+          padding: 15px;
+      }
+      .supplier-detail-header h2 {
+          font-size: 24px;
+      }
+      .supplier-detail-body p {
+          font-size: 12px;
+      }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h4 class="fw-bold py-3 mb-4">
+    <span class="text-muted fw-light">Suppliers/</span> تفاصيل المورد
+  </h4>
+  <div class="supplier-detail-container">
+    <!-- رأس الصفحة: عرض الاسم والجهة الاتصال الرئيسية -->
+    <div class="supplier-detail-header">
+      <h2>{{ supplier.name }}</h2>
+      {% if supplier.contact_person %}
+      <p><span class="supplier-detail-label">جهة الاتصال:</span> {{ supplier.contact_person }}</p>
+      {% endif %}
+    </div>
+    
+    <!-- بيانات الاتصال -->
+    <div class="supplier-section">
+      <h5 class="mb-3" style="color: #007bff;">بيانات الاتصال</h5>
+      <p><span class="supplier-detail-label">رقم الهاتف:</span> {{ supplier.phone|default:"غير محدد" }}</p>
+      <p><span class="supplier-detail-label">البريد الإلكتروني:</span> {{ supplier.email|default:"غير محدد" }}</p>
+    </div>
+    
+    <!-- بيانات العنوان -->
+    <div class="supplier-section supplier-address">
+      <h5 class="mb-3" style="color: #007bff;">العنوان</h5>
+      <div class="row">
+        <div class="col-12">
+          <p><span class="supplier-detail-label">عنوان الشارع 1:</span> {{ supplier.address_line1|default:"غير محدد" }}</p>
+        </div>
+        <div class="col-12">
+          <p><span class="supplier-detail-label">عنوان الشارع 2:</span> {{ supplier.address_line2|default:"غير محدد" }}</p>
+        </div>
+        <div class="col-12 col-md-6">
+          <p><span class="supplier-detail-label">المدينة:</span> {{ supplier.city|default:"غير محدد" }}</p>
+        </div>
+        <div class="col-12 col-md-6">
+          <p><span class="supplier-detail-label">المنطقة/المحافظة:</span> {{ supplier.region|default:"غير محدد" }}</p>
+        </div>
+        <div class="col-12 col-md-6">
+          <p><span class="supplier-detail-label">الرمز البريدي:</span> {{ supplier.postal_code|default:"غير محدد" }}</p>
+        </div>
+        <div class="col-12 col-md-6">
+          <p><span class="supplier-detail-label">البلد:</span> {{ supplier.country|default:"غير محدد" }}</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- البيانات الضريبية والتجارية -->
+    <div class="supplier-section">
+      <h5 class="mb-3" style="color: #007bff;">البيانات الضريبية والتجارية</h5>
+      <p><span class="supplier-detail-label">الرقم الضريبي:</span> {{ supplier.vat_number|default:"غير محدد" }}</p>
+      <p><span class="supplier-detail-label">رقم السجل التجاري:</span> {{ supplier.cr_number|default:"غير محدد" }}</p>
+    </div>
+    
+    <!-- الملاحظات -->
+    {% if supplier.notes %}
+    <div class="supplier-section">
+      <h5 class="mb-3" style="color: #007bff;">ملاحظات إضافية</h5>
+      <p>{{ supplier.notes }}</p>
+    </div>
+    {% endif %}
+    
+    <!-- زر الرجوع -->
+    <div class="text-center">
+      <a href="{% url 'supplier_list' %}" class="btn btn-secondary">العودة إلى قائمة الموردين</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

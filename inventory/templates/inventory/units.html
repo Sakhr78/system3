@@ -1,0 +1,561 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h2 class="mb-4 text-center">{{ title }}</h2>
+
+  <!-- قسم إدارة الوحدات -->
+  <div class="mb-5">
+    <div class="text-end mb-3">
+      <button class="btn btn-primary" id="btnAddNewUnit">
+        <i class="fas fa-plus"></i> إضافة وحدة جديدة
+      </button>
+    </div>
+    <div class="card">
+      <h5 class="card-header">الوحدات</h5>
+      <div class="table-responsive text-nowrap">
+        <table class="table table-striped" id="unitTable">
+          <thead>
+            <tr>
+              <th>اسم الوحدة الأساسية</th>
+              <th>التمييز</th>
+              <th>القالب</th>
+              <th>الحالة</th>
+              <th style="width:200px;">الإجراء</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for unit in units %}
+            <tr id="row-unit-{{ unit.id }}">
+              <td class="td-name">{{ unit.name }}</td>
+              <td class="td-abbreviation">{{ unit.abbreviation }}</td>
+              <td class="td-template">{{ unit.template }}</td>
+              <td class="td-is_active">{{ unit.is_active|yesno:"نشط,غير نشط" }}</td>
+              <td>
+                <button class="btn btn-sm btn-warning btnEditUnit" data-id="{{ unit.id }}">تعديل</button>
+                <button class="btn btn-sm btn-danger btnDeleteUnit" data-id="{{ unit.id }}">حذف</button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5">لا توجد وحدات</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- قسم إدارة تحويلات الوحدات -->
+  <div class="mb-5">
+    <div class="text-end mb-3">
+      <button class="btn btn-primary" id="btnAddNewConversion">
+        <i class="fas fa-plus"></i> إضافة تحويل وحدة
+      </button>
+    </div>
+    <div class="card">
+      <h5 class="card-header">تحويلات الوحدات</h5>
+      <div class="table-responsive text-nowrap">
+        <table class="table table-striped" id="conversionTable">
+          <thead>
+            <tr>
+              <th>الوحدة الأساسية</th>
+              <th>اسم الوحدة الأكبر</th>
+              <th>اختصار الوحدة الأكبر</th>
+              <th>معامل التحويل</th>
+              <th style="width:200px;">الإجراء</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for conversion in conversions %}
+            <tr id="row-conversion-{{ conversion.id }}">
+              <td class="td-base_unit">{{ conversion.base_unit.name }}</td>
+              <td class="td-larger_unit_name">{{ conversion.larger_unit_name }}</td>
+              <td class="td-larger_unit_abbreviation">{{ conversion.larger_unit_abbreviation }}</td>
+              <td class="td-conversion_factor">{{ conversion.conversion_factor }}</td>
+              <td>
+                <button class="btn btn-sm btn-warning btnEditConversion" data-id="{{ conversion.id }}">تعديل</button>
+                <button class="btn btn-sm btn-danger btnDeleteConversion" data-id="{{ conversion.id }}">حذف</button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5">لا توجد تحويلات</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal لإدارة الوحدات -->
+<div class="modal fade" id="unitModal" tabindex="-1" aria-labelledby="unitModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <form id="unitForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="unitModalLabel">وحدة جديدة</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="edit_id" id="unitEditId" value="">
+          <div class="mb-3">
+            <label for="id_name" class="form-label">اسم الوحدة الأساسية</label>
+            {{ unit_form.name }}
+            <div class="text-danger small" id="err_name"></div>
+          </div>
+          <div class="mb-3">
+            <label for="id_abbreviation" class="form-label">التمييز (اختصار الوحدة)</label>
+            {{ unit_form.abbreviation }}
+            <div class="text-danger small" id="err_abbreviation"></div>
+          </div>
+          <div class="mb-3">
+            <label for="id_template" class="form-label">القالب</label>
+            {{ unit_form.template }}
+            <div class="text-danger small" id="err_template"></div>
+          </div>
+          <div class="mb-3 form-check">
+            {{ unit_form.is_active }}
+            <label for="id_is_active" class="form-check-label">نشط</label>
+            <div class="text-danger small" id="err_is_active"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+          <button type="submit" class="btn btn-primary" id="unitSaveBtn">حفظ</button>
+        </div>
+      </form>
+
+
+
+
+
+
+      <form id="conversionForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="conversionModalLabel">تحويل وحدة جديد</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="edit_id" id="conversionEditId" value="">
+          <div class="mb-3">
+            <label for="id_base_unit" class="form-label">الوحدة الأساسية</label>
+            {{ conversion_form.base_unit }}
+            <div class="text-danger small" id="err_base_unit"></div>
+          </div>
+          <div class="mb-3">
+            <label for="id_larger_unit_name" class="form-label">اسم الوحدة الأكبر</label>
+            {{ conversion_form.larger_unit_name }}
+            <div class="text-danger small" id="err_larger_unit_name"></div>
+          </div>
+          <div class="mb-3">
+            <label for="id_larger_unit_abbreviation" class="form-label">اختصار الوحدة الأكبر</label>
+            {{ conversion_form.larger_unit_abbreviation }}
+            <div class="text-danger small" id="err_larger_unit_abbreviation"></div>
+          </div>
+          <div class="mb-3">
+            <label for="id_conversion_factor" class="form-label">معامل التحويل</label>
+            {{ conversion_form.conversion_factor }}
+            <div class="text-danger small" id="err_conversion_factor"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+          <button type="submit" class="btn btn-primary" id="conversionSaveBtn">حفظ</button>
+        </div>
+      </form>
+
+      <div class="mb-5">
+        <div class="text-end mb-3">
+          <button class="btn btn-primary" id="btnAddNewConversion">
+            <i class="fas fa-plus"></i> إضافة تحويل وحدة
+          </button>
+        </div>
+        <div class="card">
+          <h5 class="card-header">تحويلات الوحدات</h5>
+          <div class="table-responsive text-nowrap">
+            <table class="table table-striped" id="conversionTable">
+              <thead>
+                <tr>
+                  <th>الوحدة الأساسية</th>
+                  <th>اسم الوحدة الأكبر</th>
+                  <th>اختصار الوحدة الأكبر</th>
+                  <th>معامل التحويل</th>
+                  <th style="width:200px;">الإجراء</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for conversion in conversions %}
+                <tr id="row-conversion-{{ conversion.id }}">
+                  <td class="td-base_unit">{{ conversion.base_unit.name }}</td>
+                  <td class="td-larger_unit_name">{{ conversion.larger_unit_name }}</td>
+                  <td class="td-larger_unit_abbreviation">{{ conversion.larger_unit_abbreviation }}</td>
+                  <td class="td-conversion_factor">{{ conversion.conversion_factor }}</td>
+                  <td>
+                    <button class="btn btn-sm btn-warning btnEditConversion" data-id="{{ conversion.id }}">تعديل</button>
+                    <button class="btn btn-sm btn-danger btnDeleteConversion" data-id="{{ conversion.id }}">حذف</button>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="5">لا توجد تحويلات</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+  const unitCreateOrUpdateURL = "{% url 'ajax_create_or_update_unit' %}";
+  const unitDeleteURL = "{% url 'ajax_delete_unit' %}";
+  const conversionCreateOrUpdateURL = "{% url 'ajax_create_or_update_conversion' %}";
+  const conversionDeleteURL = "{% url 'ajax_delete_conversion' %}";
+
+  var unitModal = new bootstrap.Modal(document.getElementById('unitModal'), {});
+  var conversionModal = new bootstrap.Modal(document.getElementById('conversionModal'), {});
+
+  function clearUnitErrors() {
+    document.getElementById('err_name').innerText = "";
+    document.getElementById('err_abbreviation').innerText = "";
+    document.getElementById('err_template').innerText = "";
+    document.getElementById('err_is_active').innerText = "";
+  }
+
+  function clearConversionErrors() {
+    document.getElementById('err_base_unit').innerText = "";
+    document.getElementById('err_larger_unit_name').innerText = "";
+    document.getElementById('err_larger_unit_abbreviation').innerText = "";
+    document.getElementById('err_conversion_factor').innerText = "";
+  }
+
+  // زر "إضافة وحدة جديدة"
+  document.getElementById('btnAddNewUnit').addEventListener('click', function() {
+    document.getElementById('unitModalLabel').innerText = "إضافة وحدة جديدة";
+    document.getElementById('unitEditId').value = "";
+    document.getElementById('id_name').value = "";
+    document.getElementById('id_abbreviation').value = "";
+    document.getElementById('id_template').value = "";
+    document.getElementById('id_is_active').checked = false;
+    clearUnitErrors();
+    unitModal.show();
+  });
+
+  // زر "إضافة تحويل وحدة جديد"
+  document.getElementById('btnAddNewConversion').addEventListener('click', function() {
+    document.getElementById('conversionModalLabel').innerText = "إضافة تحويل وحدة جديد";
+    document.getElementById('conversionEditId').value = "";
+    document.getElementById('id_base_unit').selectedIndex = 0;
+    document.getElementById('id_larger_unit_name').value = "";
+    document.getElementById('id_larger_unit_abbreviation').value = "";
+    document.getElementById('id_conversion_factor').value = "";
+    clearConversionErrors();
+    conversionModal.show();
+  });
+
+  // ربط أزرار تعديل الوحدة
+  document.querySelectorAll('.btnEditUnit').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      let rowId = this.dataset.id;
+      let row = document.getElementById('row-unit-' + rowId);
+      let name = row.querySelector('.td-name').innerText.trim();
+      let abbreviation = row.querySelector('.td-abbreviation').innerText.trim();
+      let templateVal = row.querySelector('.td-template').innerText.trim();
+      let isActiveText = row.querySelector('.td-is_active').innerText.trim();
+      document.getElementById('unitModalLabel').innerText = "تعديل وحدة";
+      document.getElementById('unitEditId').value = rowId;
+      document.getElementById('id_name').value = name;
+      document.getElementById('id_abbreviation').value = abbreviation;
+      document.getElementById('id_template').value = templateVal;
+      document.getElementById('id_is_active').checked = (isActiveText === "نشط");
+      clearUnitErrors();
+      unitModal.show();
+    });
+  });
+
+  // ربط أزرار حذف الوحدة
+  document.querySelectorAll('.btnDeleteUnit').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (!confirm("هل أنت متأكد من الحذف؟")) return;
+      let deleteId = this.dataset.id;
+      let formData = new FormData();
+      formData.append('delete_id', deleteId);
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+      axios.post(unitDeleteURL, formData)
+        .then(response => {
+          if (response.data.status === 'success') {
+            document.getElementById('row-unit-' + deleteId).remove();
+            alert("تم الحذف بنجاح!");
+          } else {
+            alert("حدث خطأ أثناء الحذف.");
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          alert("خطأ في الاتصال بالسيرفر.");
+        });
+    });
+  });
+
+  // ربط أزرار تعديل تحويل الوحدة
+  document.querySelectorAll('.btnEditConversion').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      let rowId = this.dataset.id;
+      let row = document.getElementById('row-conversion-' + rowId);
+      let base_unitName = row.querySelector('.td-base_unit').innerText.trim();
+      let larger_unit_name = row.querySelector('.td-larger_unit_name').innerText.trim();
+      let larger_unit_abbreviation = row.querySelector('.td-larger_unit_abbreviation').innerText.trim();
+      let conversion_factor = row.querySelector('.td-conversion_factor').innerText.trim();
+      document.getElementById('conversionModalLabel').innerText = "تعديل تحويل وحدة";
+      document.getElementById('conversionEditId').value = rowId;
+      // هنا نفترض أن حقل base_unit عبارة عن select، لذا نقوم بتعيين القيمة بناءً على الاسم أو معرّف الوحدة الأساسية (يفضل استخدام المعرّف)
+      // في هذا المثال، نعيد تحميل القيمة باستخدام select:
+      document.getElementById('id_base_unit').value = row.dataset.base_unit || "";
+      document.getElementById('id_larger_unit_name').value = larger_unit_name;
+      document.getElementById('id_larger_unit_abbreviation').value = larger_unit_abbreviation;
+      document.getElementById('id_conversion_factor').value = conversion_factor;
+      clearConversionErrors();
+      conversionModal.show();
+    });
+  });
+
+  // ربط أزرار حذف تحويل الوحدة
+  document.querySelectorAll('.btnDeleteConversion').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (!confirm("هل أنت متأكد من الحذف؟")) return;
+      let deleteId = this.dataset.id;
+      let formData = new FormData();
+      formData.append('delete_id', deleteId);
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+      axios.post(conversionDeleteURL, formData)
+        .then(response => {
+          if (response.data.status === 'success') {
+            document.getElementById('row-conversion-' + deleteId).remove();
+            alert("تم الحذف بنجاح!");
+          } else {
+            alert("حدث خطأ أثناء الحذف.");
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          alert("خطأ في الاتصال بالسيرفر.");
+        });
+    });
+  });
+
+  // إرسال نموذج الوحدة
+  document.getElementById('unitForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    clearUnitErrors();
+    let formData = new FormData(this);
+    axios.post(unitCreateOrUpdateURL, formData)
+      .then(response => {
+        let data = response.data;
+        if (data.status === 'success') {
+          let rowId = data.id;
+          let existingRow = document.getElementById('row-unit-' + rowId);
+          let name = document.getElementById('id_name').value;
+          let abbreviation = document.getElementById('id_abbreviation').value;
+          let templateVal = document.getElementById('id_template').value;
+          let is_active = document.getElementById('id_is_active').checked ? "نشط" : "غير نشط";
+          if (!existingRow) {
+            let newRow = document.createElement('tr');
+            newRow.id = 'row-unit-' + rowId;
+            newRow.innerHTML = `
+              <td class="td-name">${name}</td>
+              <td class="td-abbreviation">${abbreviation}</td>
+              <td class="td-template">${templateVal}</td>
+              <td class="td-is_active">${is_active}</td>
+              <td>
+                <button class="btn btn-sm btn-warning btnEditUnit" data-id="${rowId}">تعديل</button>
+                <button class="btn btn-sm btn-danger btnDeleteUnit" data-id="${rowId}">حذف</button>
+              </td>
+            `;
+            document.querySelector('#unitTable tbody').prepend(newRow);
+          } else {
+            existingRow.querySelector('.td-name').innerText = name;
+            existingRow.querySelector('.td-abbreviation').innerText = abbreviation;
+            existingRow.querySelector('.td-template').innerText = templateVal;
+            existingRow.querySelector('.td-is_active').innerText = is_active;
+          }
+          unitModal.hide();
+          alert("تم الحفظ بنجاح!");
+          rebindUnitButtons();
+        } else if (data.status === 'error') {
+          let errors = data.errors;
+          for (let field in errors) {
+            document.getElementById('err_' + field).innerText = errors[field];
+          }
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        alert("حدث خطأ أثناء الاتصال بالسيرفر.");
+      });
+  });
+
+  // إرسال نموذج تحويل الوحدة
+  document.getElementById('conversionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    clearConversionErrors();
+    let formData = new FormData(this);
+    axios.post(conversionCreateOrUpdateURL, formData)
+      .then(response => {
+        let data = response.data;
+        if (data.status === 'success') {
+          let rowId = data.id;
+          let existingRow = document.getElementById('row-conversion-' + rowId);
+          // للحصول على اسم الوحدة الأساسية نستخدم قيمة الحقل المختار في select
+          let base_unitName = document.getElementById('id_base_unit').options[document.getElementById('id_base_unit').selectedIndex].text;
+          let larger_unit_name = document.getElementById('id_larger_unit_name').value;
+          let larger_unit_abbreviation = document.getElementById('id_larger_unit_abbreviation').value;
+          let conversion_factor = document.getElementById('id_conversion_factor').value;
+          if (!existingRow) {
+            let newRow = document.createElement('tr');
+            newRow.id = 'row-conversion-' + rowId;
+            newRow.innerHTML = `
+              <td class="td-base_unit">${base_unitName}</td>
+              <td class="td-larger_unit_name">${larger_unit_name}</td>
+              <td class="td-larger_unit_abbreviation">${larger_unit_abbreviation}</td>
+              <td class="td-conversion_factor">${conversion_factor}</td>
+              <td>
+                <button class="btn btn-sm btn-warning btnEditConversion" data-id="${rowId}">تعديل</button>
+                <button class="btn btn-sm btn-danger btnDeleteConversion" data-id="${rowId}">حذف</button>
+              </td>
+            `;
+            document.querySelector('#conversionTable tbody').prepend(newRow);
+          } else {
+            existingRow.querySelector('.td-base_unit').innerText = base_unitName;
+            existingRow.querySelector('.td-larger_unit_name').innerText = larger_unit_name;
+            existingRow.querySelector('.td-larger_unit_abbreviation').innerText = larger_unit_abbreviation;
+            existingRow.querySelector('.td-conversion_factor').innerText = conversion_factor;
+          }
+          conversionModal.hide();
+          alert("تم الحفظ بنجاح!");
+          rebindConversionButtons();
+        } else if (data.status === 'error') {
+          let errors = data.errors;
+          for (let field in errors) {
+            document.getElementById('err_' + field).innerText = errors[field];
+          }
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        alert("حدث خطأ أثناء الاتصال بالسيرفر.");
+      });
+  });
+
+  function rebindUnitButtons() {
+    document.querySelectorAll('.btnEditUnit').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        let rowId = this.dataset.id;
+        let row = document.getElementById('row-unit-' + rowId);
+        let name = row.querySelector('.td-name').innerText.trim();
+        let abbreviation = row.querySelector('.td-abbreviation').innerText.trim();
+        let templateVal = row.querySelector('.td-template').innerText.trim();
+        let isActiveText = row.querySelector('.td-is_active').innerText.trim();
+        document.getElementById('unitModalLabel').innerText = "تعديل وحدة";
+        document.getElementById('unitEditId').value = rowId;
+        document.getElementById('id_name').value = name;
+        document.getElementById('id_abbreviation').value = abbreviation;
+        document.getElementById('id_template').value = templateVal;
+        document.getElementById('id_is_active').checked = (isActiveText === "نشط");
+        clearUnitErrors();
+        unitModal.show();
+      });
+    });
+    document.querySelectorAll('.btnDeleteUnit').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (!confirm("هل أنت متأكد من الحذف؟")) return;
+        let deleteId = this.dataset.id;
+        let formData = new FormData();
+        formData.append('delete_id', deleteId);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        axios.post(unitDeleteURL, formData)
+          .then(response => {
+            if (response.data.status === 'success') {
+              document.getElementById('row-unit-' + deleteId).remove();
+              alert("تم الحذف بنجاح!");
+            } else {
+              alert("حدث خطأ أثناء الحذف.");
+            }
+          })
+          .catch(error => {
+            console.error(error);
+            alert("خطأ في الاتصال بالسيرفر.");
+          });
+      });
+    });
+  }
+
+  function rebindConversionButtons() {
+    document.querySelectorAll('.btnEditConversion').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        let rowId = this.dataset.id;
+        let row = document.getElementById('row-conversion-' + rowId);
+        let base_unitName = row.querySelector('.td-base_unit').innerText.trim();
+        let larger_unit_name = row.querySelector('.td-larger_unit_name').innerText.trim();
+        let larger_unit_abbreviation = row.querySelector('.td-larger_unit_abbreviation').innerText.trim();
+        let conversion_factor = row.querySelector('.td-conversion_factor').innerText.trim();
+        document.getElementById('conversionModalLabel').innerText = "تعديل تحويل وحدة";
+        document.getElementById('conversionEditId').value = rowId;
+        // هنا يجب تعيين القيمة لحقل base_unit (افترضنا أن القيمة هي معرّف الوحدة الأساسية)
+        // إذا كانت لديك طريقة للحصول على معرّف الوحدة الأساسية من الصف، يمكنك تعيينها.
+        document.getElementById('id_base_unit').value = ""; // قم بتعيين القيمة المناسبة
+        document.getElementById('id_larger_unit_name').value = larger_unit_name;
+        document.getElementById('id_larger_unit_abbreviation').value = larger_unit_abbreviation;
+        document.getElementById('id_conversion_factor').value = conversion_factor;
+        clearConversionErrors();
+        conversionModal.show();
+      });
+    });
+    document.querySelectorAll('.btnDeleteConversion').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (!confirm("هل أنت متأكد من الحذف؟")) return;
+        let deleteId = this.dataset.id;
+        let formData = new FormData();
+        formData.append('delete_id', deleteId);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        axios.post(conversionDeleteURL, formData)
+          .then(response => {
+            if (response.data.status === 'success') {
+              document.getElementById('row-conversion-' + deleteId).remove();
+              alert("تم الحذف بنجاح!");
+            } else {
+              alert("حدث خطأ أثناء الحذف.");
+            }
+          })
+          .catch(error => {
+            console.error(error);
+            alert("خطأ في الاتصال بالسيرفر.");
+          });
+      });
+    });
+  }
+
+  // استدعاء إعادة ربط الأزرار عند تحميل الصفحة
+  rebindUnitButtons();
+  rebindConversionButtons();
+
+});
+</script>
+{% endblock %}

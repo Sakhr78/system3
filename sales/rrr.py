@@ -1,0 +1,477 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.db import transaction
+from django.urls import reverse
+from invoices.models import *
+from invoices.forms import *
+
+import json
+
+from django.db.models import Q
+from django.http import JsonResponse
+
+import json  # لتحويل البيانات إلى تنسيق JSON  
+
+
+
+def sales_invoice_list(request):
+    """
+    عرض قائمة فواتير المبيعات مع إمكانية البحث والتصفية حسب اسم العميل وتاريخ الفاتورة.
+    """
+    # جلب فواتير المبيعات وترتيبها تنازليًا بحسب تاريخ الفاتورة (الأحدث أولاً)
+    invoices = Invoice.objects.filter(invoice_type='sales').order_by('-invoice_date')
+    
+    # خيارات البحث من GET
+    customer = request.GET.get('customer')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    if customer:
+        invoices = invoices.filter(customer__name__icontains=customer)
+    if start_date:
+        invoices = invoices.filter(invoice_date__gte=start_date)
+    if end_date:
+        invoices = invoices.filter(invoice_date__lte=end_date)
+    
+    context = {
+        'invoices': invoices,
+        'title': 'قائمة فواتير المبيعات'
+    }
+    return render(request, 'sales/invoice_list.html', context)
+
+
+def create_sales_invoice(request):
+    if request.method == 'POST':
+        form = SalesInvoiceForm(request.POST, request.FILES)
+        formset = InvoiceItemFormSet(request.POST, prefix='items')
+        if form.is_valid() and formset.is_valid():
+            try:
+                with transaction.atomic():
+                    # احفظ الفاتورة مع ربطها بالعميل
+                    invoice = form.save(commit=False)
+                    invoice.customer = form.cleaned_data['customer']
+                    invoice.save()
+                    
+                    formset.instance = invoice
+                    formset.save()
+                    
+                    # منطق تحديث المخزون (يبقى كما هو)
+                    for item_form in formset:
+                        if not item_form.cleaned_data.get('DELETE', False):
+                            item = item_form.save(commit=False)
+                            product = item.product
+                            base_quantity = item.quantity
+                            
+                            if product.stock < base_quantity:
+                                raise Exception(f"لا توجد كمية كافية للمنتج {product.name_ar}")
+                            product.stock -= int(base_quantity)
+                            product.save()
+
+                messages.success(request, 'تم إنشاء فاتورة المبيعات بنجاح.')
+                return redirect('sales_invoice_detail', invoice_id=invoice.id)
+            except Exception as e:
+                messages.error(request, f'حدث خطأ: {str(e)}')
+        else:
+            messages.error(request, 'يرجى تصحيح الأخطاء في النموذج')
+    else:
+        form = SalesInvoiceForm()
+        formset = InvoiceItemFormSet(prefix='items')
+    
+    # الباقي يبقى كما هو
+    products = Product.objects.all()
+    product_prices = {str(product.id): str(product.price) for product in products}
+    product_units = {str(product.id): product.unit.abbreviation for product in products}
+    conversion_units = {
+        str(conv.id): {
+            "abbr": conv.larger_unit_name if hasattr(conv, 'larger_unit_name') else conv.conversion_unit,
+            "factor": str(conv.conversion_factor)
+        }
+        for conv in UnitConversion.objects.all()
+    }
+    context = {
+        'form': form,
+        'formset': formset,
+        'title': 'إنشاء فاتورة مبيعات - النظام المحاسبي',
+        'product_prices': json.dumps(product_prices),
+        'product_units': json.dumps(product_units),
+        'conversion_units': json.dumps(conversion_units),
+    }
+    return render(request, 'sales/create_invoice.html', context)
+
+
+def update_sales_invoice(request, invoice_id):
+    """
+    دالة عرض لتحديث فاتورة مبيعات موجودة.
+    """
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+
+    if request.method == 'POST':
+        form = SalesInvoiceForm(request.POST, request.FILES, instance=invoice)
+        formset = InvoiceItemFormSet(request.POST, instance=invoice, prefix='items')
+   #     print("request.POST content:", request.POST.dict())
+
+        if form.is_valid() and formset.is_valid():
+            try:
+                with transaction.atomic():
+                    invoice = form.save(commit=False)
+                    invoice.customer = form.cleaned_data['customer']
+                    invoice.save()
+
+                    # تخزين العناصر القديمة لمقارنة التعديلات
+                    old_items = {item.id: item for item in invoice.invoice_items.all()}
+                    formset.instance = invoice
+                    formset_items = formset.save(commit=False)
+
+                    for item in formset_items:
+                        if item.id:
+                            old_item = old_items.pop(item.id, None)
+                        else:
+                            old_item = None
+
+                        product = item.product
+                        base_quantity = item.quantity
+
+                        if old_item:
+                            # حساب الفرق بين الكمية الجديدة والقديمة
+                            quantity_difference = base_quantity - old_item.quantity
+                            product.stock -= int(quantity_difference)
+                        else:
+                            if product.stock < base_quantity:
+                                raise Exception(f"لا توجد كمية كافية للمنتج {product.name_ar}")
+                            product.stock -= int(base_quantity)
+
+                        if product.stock < 0:
+                            raise Exception(f"الكمية في المخزون للمنتج {product.name_ar} أصبحت أقل من صفر.")
+
+                        item.save()
+                        product.save()
+
+                    # استعادة المخزون للعناصر التي تم حذفها
+                 #   for old_item in old_items.values():
+                 #       product = old_item.product
+                 #       product.stock += int(old_item.quantity)
+                 #       product.save()
+                  #      old_item.delete()
+
+                    invoice.calculate_totals()
+                    invoice.save()
+
+                    messages.success(request, 'تم تحديث فاتورة المبيعات بنجاح.')
+                    return redirect('sales_invoice_detail', invoice_id=invoice.id)
+
+            except Exception as e:
+                messages.error(request, f'حدث خطأ أثناء تحديث الفاتورة: {str(e)}')
+        else:
+            print("Formset Errors:", formset.errors)
+            messages.error(request, 'يرجى تصحيح الأخطاء في النموذج.')
+    else:
+        form = SalesInvoiceForm(instance=invoice)
+        formset = InvoiceItemFormSet(instance=invoice, prefix='items')
+
+    products = Product.objects.all()
+    product_prices = {str(product.id): str(product.price) for product in products}
+    product_units = {str(product.id): product.unit.abbreviation for product in products}
+    conversion_units = {
+        str(conv.id): {
+            "abbr": conv.larger_unit_name if hasattr(conv, 'larger_unit_name') else conv.conversion_unit,
+            "factor": str(conv.conversion_factor)
+        }
+        for conv in UnitConversion.objects.all()
+    }
+    context = {
+        'form': form,
+        'formset': formset,
+        'title': 'تحديث فاتورة مبيعات - النظام المحاسبي',
+        'invoice_id': invoice_id,
+        'product_prices': json.dumps(product_prices),
+        'product_units': json.dumps(product_units),
+        'conversion_units': json.dumps(conversion_units),
+    }
+    return render(request, 'sales/edit_invoice.html', context)
+
+
+
+
+
+
+
+
+def delete_sales_invoice(request, invoice_id):
+    """
+    دالة لحذف فاتورة مبيعات.
+    يتم التأكد من أن الفاتورة من نوع 'sales'.
+    عند تأكيد الحذف (POST)، يتم حذف الفاتورة وإعادة التوجيه إلى صفحة قائمة فواتير المبيعات.
+    """
+    invoice = get_object_or_404(Invoice, id=invoice_id, invoice_type='sales')
+    
+    if request.method == 'POST':
+        invoice.delete()
+        messages.success(request, "تم حذف فاتورة المبيعات بنجاح.")
+        return redirect('sales_invoice_list')  # تأكد من وجود مسار URL مناسب لقائمة فواتير المبيعات
+
+
+
+
+
+
+def sales_invoice_detail(request, invoice_id):
+
+    invoice = get_object_or_404(Invoice, id=invoice_id, invoice_type='sales')
+    context = {
+        'invoice': invoice,
+        'invoice_items': invoice.invoice_items.all(),  # أو الاستعلام المناسب
+        'title': f'تفاصيل فاتورة المبيعات {invoice.invoice_number}'
+    }
+    return render(request, 'sales/invoice_detail.html', context)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def list_sales_returns(request):
+  
+    context = {
+        'title': 'قائمة مرتجعات المبيعات (بحث ديناميكي)',
+    }
+    return render(request, 'sales_returns/list.html', context)
+
+
+
+
+def ajax_search_sales_returns(request):
+    invoice_number = request.GET.get('invoice_number', '').strip()
+    customer_name = request.GET.get('customer_name', '').strip()
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+
+    # فلترة فواتير المرتجع فقط
+    qs = Invoice.objects.filter(invoice_type='sales_return')
+
+    if invoice_number:
+        qs = qs.filter(invoice_number__icontains=invoice_number)
+
+
+    if customer_name:
+        qs = qs.filter(customer__name__icontains=customer_name)
+
+    if date_from:
+        qs = qs.filter(invoice_date__date__gte=date_from)
+
+    if date_to:
+        qs = qs.filter(invoice_date__date__lte=date_to)
+
+    # ترتيب تنازلي (الأحدث أولاً)
+    qs = qs.order_by('-id')
+
+    data = []
+    for invoice in qs:
+        data.append({
+            'id': invoice.id,
+            'invoice_number': invoice.invoice_number,
+            'invoice_date': invoice.invoice_date.strftime('%Y-%m-%d %H:%M'),
+            'customer_name': invoice.customer.name if invoice.customer else '—',
+            #'product_name': invoice.product.name_ar if invoice.product.name_ar else '—',
+            'total_amount': str(invoice.total_amount),
+        })
+
+    return JsonResponse({'results': data})
+
+
+
+
+
+def delete_sales_return_invoice(request, invoice_id):
+
+    invoice = get_object_or_404(Invoice, id=invoice_id, invoice_type='sales_return')
+    
+    if request.method == 'POST':
+        invoice.delete()
+        messages.success(request, "تم حذف فاتورة المبيعات بنجاح.")
+        return redirect('list_sales_returns')  
+
+
+
+def sales_return_invoice_detail(request, invoice_id):
+
+    invoice = get_object_or_404(Invoice, id=invoice_id, invoice_type='sales_return')
+    context = {
+        'invoice': invoice,
+        'invoice_items': invoice.invoice_items.all(),  # أو الاستعلام المناسب
+        'title': f'تفاصيل فاتورة المبيعات {invoice.invoice_number}'
+    }
+    return render(request, 'sales/invoice_detail.html', context)
+
+
+
+
+
+
+
+
+
+
+
+import json
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+
+def get_invoice_data(request):
+    """
+    يعيد بيانات الفاتورة الأصلية (من نوع sales) بصيغة JSON،
+    يشمل ذلك: العميل، طريقة الدفع، الملاحظات، البنود (قائمة المنتجات والكميات).
+    """
+    invoice_id = request.GET.get('invoice_id')
+    invoice = get_object_or_404(Invoice, pk=invoice_id, invoice_type='sales')
+    
+    # تجهيز البيانات الأساسية
+    data = {
+        'customer_id': invoice.customer.id if invoice.customer else None,
+        'payment_method_id': invoice.payment_method.id if invoice.payment_method else None,
+        'notes': invoice.notes or '',
+        'items': []
+    }
+    
+    # إضافة بنود الفاتورة
+    for item in invoice.invoice_items.all():
+        data['items'].append({
+            'product_id': item.product.id,
+            'product_name': str(item.product),
+            'quantity': str(item.quantity),
+            'unit_price': str(item.unit_price),
+            'tax_rate': str(item.tax_rate),
+        })
+    
+    return JsonResponse(data, safe=False)
+
+
+
+
+from .forms import *
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.urls import reverse
+# من المهم وجود حقل original_invoice في نموذج Invoice (من نوع ForeignKey أو OneToOne) لضمان تخزين الفاتورة الأصلية
+
+def get_invoice_details(request):
+    """
+    جلب تفاصيل الفاتورة الأصلية عند اختيارها من القائمة المنسدلة أو عبر AJAX.
+    """
+    invoice_id = request.GET.get('invoice_id')
+    invoice = get_object_or_404(Invoice, id=invoice_id, invoice_type='sales')
+    items = [
+        {
+            'product_id': item.product.id,
+            'product_name': str(item.product.name_ar),
+            'quantity': item.quantity,
+            'unit_price': float(item.unit_price),
+            'tax_rate': float(item.tax_rate)
+        } for item in invoice.invoice_items.all()
+    ]
+    data = {
+        'customer_id': invoice.customer.id,
+        'invoice_items': items,
+        'invoice_number': invoice.invoice_number,
+        'discount_percentage': invoice.discount_percentage if hasattr(invoice, 'discount_percentage') else None,
+    }
+    return JsonResponse(data)
+
+
+
+
+def get_invoices_by_customer(request):
+    """
+    ترجع الفواتير من نوع 'sales' الخاصة بعميل محدد مع استبعاد أي فاتورة
+    سبق إنشاء فاتورة مرتجع مبيعات لها (original_invoice).
+    """
+    customer_id = request.GET.get('customer_id')
+    if customer_id:
+        # 1) الحصول على جميع فواتير المرتجع التي لديها فاتورة أصلية فعليًا
+        used_sales_invoices = Invoice.objects.filter(
+            invoice_type='sales_return',
+            original_invoice__isnull=False
+        ).values_list('original_invoice_id', flat=True)
+
+        # 2) جلب فواتير المبيعات لهذا العميل واستبعاد تلك المستخدمة مسبقًا كفاتورة أصلية
+        invoices = Invoice.objects.filter(
+            customer_id=customer_id,
+            invoice_type='sales'
+        ).exclude(id__in=used_sales_invoices)
+
+        data = [{
+            'id': invoice.id,
+            'invoice_number': invoice.invoice_number,
+        } for invoice in invoices]
+        return JsonResponse({'invoices': data})
+    return JsonResponse({'error': 'طلب غير صالح'}, status=400)
+
+def create_sales_return_invoicee(request):
+    """
+    إنشاء فاتورة مرتجع مبيعات جديدة. إذا تم تمرير original_id في GET، سيتم ربطها بالفاتورة الأصلية
+    وتعطيل اختيار تلك الفاتورة لاحقًا في واجهة المستخدم.
+    """
+    original_id = request.GET.get('original_id')
+    if request.method == 'POST':
+        form = SalesReturnInvoiceForm(request.POST, request.FILES)
+        formset = SalesReturnInvoiceItemInlineFormSet(request.POST, request.FILES)
+        if form.is_valid() and formset.is_valid():
+            invoice = form.save(commit=False)
+            invoice.invoice_type = 'sales_return'
+            invoice.save()  # حفظ الفاتورة للحصول على المفتاح الأساسي
+            invoice.calculate_totals()  # إعادة حساب الإجماليات بعد الحفظ
+            formset.instance = invoice
+            formset.save()
+            return redirect(reverse('sales_return_invoice_detail', kwargs={'invoice_id': invoice.id}))
+        # في حالة وجود خطأ بالتحقق من صحة البيانات
+        return render(request, 'sales_return_invoice_form5.html', {'form': form, 'formset': formset})
+    
+    # طلب GET لعرض الصفحة الفارغة أو مع فاتورة أصلية إن وُجدت.
+    invoice = Invoice(invoice_type='sales_return')
+    if original_id:
+        original_inv = get_object_or_404(Invoice, pk=original_id, invoice_type='sales')
+        invoice.original_invoice = original_inv
+        invoice.customer = original_inv.customer
+        invoice.payment_method = original_inv.payment_method
+        invoice.notes = f"نسخة عن فاتورة {original_inv.invoice_number}"
+        if hasattr(original_inv, 'discount_percentage'):
+            invoice.discount_percentage = original_inv.discount_percentage
+
+    form = SalesReturnInvoiceForm(instance=invoice)
+    formset = SalesReturnInvoiceItemInlineFormSet(instance=invoice)
+    return render(request, 'sales_return_invoice_form5.html', {'form': form, 'formset': formset})
+
+
+
+def update_sales_return_invoice(request, invoice_id):
+    invoice = get_object_or_404(Invoice, pk=invoice_id, invoice_type='sales_return')
+    
+    if request.method == 'POST':
+        form = SalesReturnInvoiceForm(request.POST, request.FILES, instance=invoice)
+        formset = SalesReturnInvoiceItemInlineFormSet(request.POST, request.FILES, instance=invoice)
+        if form.is_valid() and formset.is_valid():
+            invoice = form.save(commit=False)
+            invoice.invoice_type = 'sales_return'
+            invoice.save()  # حفظ التحديثات على الفاتورة
+            invoice.calculate_totals()  # إعادة حساب الإجماليات بعد التحديث
+            formset.instance = invoice
+            formset.save()
+            return redirect(reverse('sales_return_invoice_detail', kwargs={'invoice_id': invoice.id}))
+        # في حالة وجود أخطاء في التحقق نعيد عرض النموذج مع الأخطاء
+        return render(request, 'sales_return_invoice_form5.html', {'form': form, 'formset': formset})
+    
+    # معالجة طلب GET: إنشاء الفورم مع instance الحالي وتعديل الحقول بحيث تكون غير قابلة للتعديل
+    form = SalesReturnInvoiceForm(instance=invoice)
+    form.fields['original_invoice'].widget.attrs.update({'disabled': 'disabled'})
+    form.fields['customer'].widget.attrs.update({'disabled': 'disabled'})
+    formset = SalesReturnInvoiceItemInlineFormSet(instance=invoice)
+    
+    return render(request, 'sales_returns/edit_sales_return.html', {'form': form, 'formset': formset})

@@ -1,0 +1,505 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    /* --- الألوان الأساسية --- */
+    :root {
+        --primary-color: #50a5f1; /* أزرق رئيسي أكثر حيوية */
+        --secondary-color: #6c757d; /* رمادي ثانوي أنيق */
+        --light-background: #f8faff; /* خلفية فاتحة جداً */
+        --table-header-bg: #eef2f7; /* لون رأس الجدول الفاتح */
+        --section-divider-color: #e0e6ed; /* لون فاصل الأقسام */
+        --accent-color: #ffc107; /* أصفر للتركيز */
+        --success-color: #28a745; /* أخضر للنجاح */
+        --warning-color: #ffc107; /* أصفر للتحذير */
+        --info-color: #17a2b8; /* أزرق سماوي للمعلومات */
+        --text-dark: #343a40; /* نص داكن أساسي */
+        --text-muted: #6c757d; /* نص ثانوي باهت */
+        --white: #ffffff; /* أبيض نقي */
+    }
+
+    /* --- الخطوط والتنسيق العام --- */
+    body {
+        font-family: 'Cairo', sans-serif;
+        background-color: var(--light-background);
+        color: var(--text-dark);
+        direction: rtl;
+        line-height: 1.7; /* زيادة تباعد الأسطر للقراءة */
+    }
+
+    /* --- حاوية تفاصيل الفاتورة --- */
+    .invoice-detail-container {
+        max-width: 1050px; /* توسيع الحاوية قليلاً */
+        margin: 35px auto; /* هامش علوي وسفلي معدل */
+        padding: 50px; /* زيادة الحشو الداخلي بشكل ملحوظ */
+        background-color: var(--white);
+        border-radius: 15px; /* حواف أكثر استدارة ونعومة */
+        box-shadow: 0 12px 40px rgba(0,0,0,0.09); /* ظل أكثر انتشارًا ونعومة */
+        border: 1px solid #f1f1f1; /* حد خفيف جدًا */
+    }
+
+    /* --- شريط التنقل (Breadcrumb) --- */
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+        margin-bottom: 30px; /* زيادة الهامش السفلي لشريط التنقل */
+        font-size: 16px; /* حجم خط أكبر لشريط التنقل */
+        color: var(--text-muted);
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        color: #999; /* لون فاصل أفتح وأكثر أناقة */
+        content: "/";
+    }
+    .breadcrumb-item a {
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: color 0.3s ease-in-out; /* انتقال لون أكثر سلاسة */
+    }
+    .breadcrumb-item a:hover {
+        color: #007bff; /* لون الرابط عند التحويم */
+    }
+    .breadcrumb-item.active {
+        color: var(--text-dark);
+        font-weight: 500; /* خط أكثر سماكة للعنصر النشط */
+    }
+
+    /* --- رأس الفاتورة --- */
+    .invoice-header {
+        text-align: center;
+        margin-bottom: 40px; /* زيادة الهامش السفلي للرأس */
+        padding-bottom: 30px; /* زيادة الحشو السفلي للرأس */
+        border-bottom: 3px double var(--section-divider-color); /* حد مزدوج أنيق */
+    }
+    .invoice-header h2 {
+        font-size: 48px; /* حجم خط أكبر وأكثر جاذبية لعنوان الفاتورة */
+        color: var(--primary-color);
+        margin-bottom: 12px; /* تقليل الهامش السفلي للعنوان */
+        font-weight: bold; /* خط أكثر سماكة للعنوان */
+        letter-spacing: -1px; /* تباعد حروف أقل لعنوان أكثر كثافة */
+    }
+    .invoice-header p {
+        font-size: 20px; /* حجم خط أكبر لوصف التاريخ */
+        color: var(--text-muted);
+        margin-bottom: 25px; /* زيادة الهامش السفلي للوصف */
+        font-weight: 400; /* وزن خط قياسي للوصف */
+    }
+    .invoice-header .btn-group .btn {
+        margin: 0 10px; /* زيادة الهوامش بين الأزرار */
+        border-radius: 10px; /* حواف مستديرة أكثر للأزرار */
+        font-size: 17px; /* حجم خط أكبر للأزرار */
+        padding: 12px 25px; /* حشو أكبر للأزرار */
+        transition: all 0.3s ease-in-out; /* تأثير انتقال أكثر سلاسة للأزرار */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* ظل خفيف للأزرار */
+    }
+    .invoice-header .btn-group .btn-outline-primary {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    .invoice-header .btn-group .btn-outline-primary:hover {
+        background-color: var(--primary-color);
+        color: var(--white);
+    }
+    .invoice-header .btn-group .btn-outline-secondary {
+        color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+    .invoice-header .btn-group .btn-outline-secondary:hover {
+        background-color: var(--secondary-color);
+        color: var(--white);
+    }
+    .invoice-header .btn-group .btn-outline-info {
+        color: var(--info-color);
+        border-color: var(--info-color);
+    }
+    .invoice-header .btn-group .btn-outline-info:hover {
+        background-color: var(--info-color);
+        color: var(--white);
+    }
+
+    /* --- عناوين الأقسام --- */
+    .section-title {
+        font-size: 30px; /* حجم خط أكبر وأكثر فخامة لعناوين الأقسام */
+        color: var(--primary-color);
+        border-bottom: 3px solid var(--primary-color); /* خط سفلي بلون أزرق رئيسي */
+        padding-bottom: 12px; /* زيادة الحشو السفلي لعناوين الأقسام */
+        margin-bottom: 30px; /* زيادة الهامش السفلي لعناوين الأقسام */
+        font-weight: 600; /* وزن خط أكثر سماكة لعناوين الأقسام */
+        letter-spacing: -0.5px; /* تباعد حروف أقل لعناوين أكثر كثافة */
+    }
+
+    /* --- جداول المعلومات --- */
+    .info-table {
+        width: 100%;
+        margin-bottom: 35px; /* زيادة الهامش السفلي للجداول */
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 10px; /* حواف مستديرة للجداول */
+        overflow: hidden; /* إخفاء الحواف الزائدة داخل الحدود المستديرة */
+        box-shadow: 0 3px 8px rgba(0,0,0,0.03); /* ظل خفيف للجداول */
+    }
+    .info-table th, .info-table td {
+        padding: 16px 20px; /* زيادة الحشو الداخلي للخلايا */
+        border: none;
+        font-size: 18px; /* حجم خط أكبر لخلايا الجدول */
+        text-align: right;
+    }
+    .info-table th {
+        background-color: var(--table-header-bg);
+        font-weight: bold;
+        color: var(--text-muted);
+    }
+    .info-table td {
+        color: var(--text-dark);
+    }
+    .info-table tbody tr:nth-child(even) {
+        background-color: #fcfcfc; /* لون خلفية مختلف للصفوف الزوجية */
+    }
+    .info-table tbody tr:last-child td {
+        border-bottom: none; /* إزالة الحد السفلي للصف الأخير */
+    }
+
+    /* --- التنبيهات --- */
+    .alert {
+        padding: 20px 30px; /* حشو أكبر للتنبيهات */
+        border-radius: 10px; /* حواف مستديرة أكثر للتنبيهات */
+        margin-bottom: 30px; /* زيادة الهامش السفلي للتنبيهات */
+        font-size: 18px; /* حجم خط أكبر للتنبيهات */
+        border: none; /* إزالة الحدود الافتراضية للتنبيهات */
+        box-shadow: 0 3px 8px rgba(0,0,0,0.03); /* ظل خفيف للتنبيهات */
+    }
+    .alert-warning {
+        background-color: #fff9e6; /* لون خلفية أصفر أفتح وأكثر دفئًا */
+        color: #85640c; /* لون نص بني ذهبي أغمق */
+        border-left: 5px solid var(--warning-color); /* خط جانبي ملون للتنبيهات الصفراء */
+    }
+    .alert-info {
+        background-color: #e6f8ff; /* لون خلفية أزرق فاتح جداً وأكثر برودة */
+        color: #085166; /* لون نص أزرق مخضر أغمق */
+        border-left: 5px solid var(--info-color); /* خط جانبي ملون للتنبيهات الزرقاء */
+    }
+
+    /* --- جدول عناصر الفاتورة --- */
+    .table-responsive {
+        margin-bottom: 40px; /* زيادة الهامش السفلي لجدول العناصر */
+    }
+    .table-striped {
+        border-radius: 10px; /* حواف مستديرة لجدول العناصر */
+        overflow: hidden; /* إخفاء الحواف الزائدة داخل الحدود المستديرة */
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05); /* ظل أكثر وضوحًا لجدول العناصر */
+    }
+    .table-striped thead tr {
+        background-color: var(--table-header-bg);
+        border-bottom: 2px solid var(--section-divider-color); /* خط سفلي لرأس الجدول أكثر وضوحًا */
+    }
+    .table-striped thead th {
+        color: var(--text-muted);
+        font-size: 17px; /* حجم خط أكبر لرأس الجدول */
+        padding: 18px 22px; /* حشو أكبر لرأس الجدول */
+        font-weight: bold; /* خط عريض لرأس الجدول */
+        text-transform: uppercase; /* تحويل النص لرأس الجدول إلى حروف كبيرة */
+        letter-spacing: 0.5px; /* تباعد حروف لرأس الجدول */
+    }
+    .table-striped tbody td {
+        font-size: 17px; /* حجم خط أكبر لخلايا الجدول */
+        padding: 18px 22px; /* حشو أكبر لخلايا الجدول */
+        vertical-align: middle;
+        color: var(--text-dark);
+    }
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: #fdfdfd; /* لون خلفية أفتح للأسطر الفردية */
+    }
+    .table-striped th, .table-striped td {
+        border: none;
+        border-bottom: 1px solid #f1f1f1; /* خط سفلي خفيف لفصل الأسطر */
+    }
+    .table-striped tbody tr:last-child td {
+        border-bottom: none; /* إزالة الحد السفلي للصف الأخير */
+    }
+
+    /* --- زر العودة --- */
+    .back-btn {
+        text-align: center;
+        margin-top: 50px; /* زيادة الهامش العلوي لزر العودة بشكل ملحوظ */
+    }
+    .back-btn a {
+        font-size: 18px; /* حجم خط أكبر لزر العودة */
+        padding: 15px 35px; /* حشو أكبر لزر العودة */
+        border-radius: 10px; /* حواف مستديرة أكثر لزر العودة */
+        font-weight: 500; /* وزن خط متوسط لزر العودة */
+        box-shadow: 0 3px 8px rgba(0,0,0,0.05); /* ظل خفيف لزر العودة */
+    }
+    .back-btn .btn-secondary {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+        color: var(--white);
+        transition: background-color 0.3s ease-in-out;
+    }
+    .back-btn .btn-secondary:hover {
+        background-color: #5a6268; /* لون أغمق عند التحويم */
+        border-color: #5a6268;
+    }
+
+    /* --- قسم رمز QR --- */
+    .qr-code-section {
+        text-align: center;
+        margin-bottom: 40px; /* زيادة الهامش السفلي لقسم رمز QR */
+    }
+    .qr-code-section .section-title {
+        text-align: center;
+        margin-bottom: 20px; /* زيادة الهامش السفلي لعنوان قسم رمز QR */
+    }
+    .qr-code-section img {
+        max-width: 250px; /* زيادة الحد الأقصى لعرض رمز QR بشكل ملحوظ */
+        border-radius: 10px; /* حواف مستديرة أكثر لرمز QR */
+        box-shadow: 0 6px 20px rgba(0,0,0,0.07); /* ظل أكثر وضوحًا لرمز QR */
+        padding: 12px; /* حشو داخلي أكبر لرمز QR */
+        background-color: var(--white);
+        border: 1px solid #eee;
+        margin-top: 20px; /* هامش علوي أكبر لرمز QR */
+    }
+
+    /* --- استجابة الأجهزة --- */
+    @media (max-width: 768px) {
+        .invoice-detail-container {
+            padding: 30px;
+            margin: 20px auto;
+        }
+        .invoice-header h2 {
+            font-size: 38px;
+        }
+        .invoice-header p {
+            font-size: 18px;
+        }
+        .section-title {
+            font-size: 26px;
+        }
+        .info-table th, .info-table td, .table-striped thead th, .table-striped tbody td, .alert, .breadcrumb, .invoice-header .btn-group .btn, .back-btn a {
+            font-size: 16px;
+            padding: 12px 15px;
+        }
+        .invoice-header .btn-group .btn {
+            padding: 10px 20px;
+        }
+        .qr-code-section img {
+            max-width: 200px; /* تقليل حجم رمز QR في الشاشات الصغيرة */
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'sales_invoice_list' %}">الفواتير</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">تفاصيل الفاتورة</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="invoice-detail-container">
+        <div class="invoice-header">
+            <h2>{{ invoice.invoice_number }}</h2>
+            <p>{{ invoice.invoice_date|date:"Y-m-d H:i" }}</p>
+            <div class="btn-group mt-3" role="group" aria-label="Invoice Actions">
+                <a href="{% url 'invoice_print_view' invoice.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-print"></i> طباعة
+                </a>
+                <a href="{% url 'edit_sales_invoice' invoice.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-edit"></i> تعديل
+                </a>
+                <a href="{% url 'sales_invoice_detail' invoice.id %}" class="btn btn-outline-info">
+                    <i class="fas fa-eye"></i> عرض
+                </a>
+            </div>
+        </div>
+
+        <div class="mb-5">
+            <div class="section-title">معلومات الفاتورة الأساسية</div>
+            <table class="info-table">
+                <tr>
+                    <th>رقم الفاتورة</th>
+                    <td>{{ invoice.invoice_number }}</td>
+                </tr>
+                <tr>
+                    <th>تاريخ الفاتورة</th>
+                    <td>{{ invoice.invoice_date|date:"Y-m-d H:i" }}</td>
+                </tr>
+                <tr>
+                    <th>نوع الفاتورة</th>
+                    <td>{{ invoice.get_invoice_type_display }}</td>
+                </tr>
+                <tr>
+                    <th>نوع الفاتورة الفرعي</th>
+                    <td>{{ invoice.get_invoice_subtype_display }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-md-6">
+                <div class="section-title">
+                    {% if invoice.invoice_type == 'sales' %}
+                        بيانات العميل
+                    {% else %}
+                        بيانات المورد
+                    {% endif %}
+                </div>
+                <table class="info-table">
+                    {% if invoice.invoice_type == 'sales' %}
+                        <tr>
+                            <th>العميل</th>
+                            <td>{{ invoice.customer.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>الهاتف</th>
+                            <td>{{ invoice.customer.phone|default:"غير محدد" }}</td>
+                        </tr>
+                        <tr>
+                            <th>العنوان</th>
+                            <td>{{ invoice.customer.address|default:"غير محدد" }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <th>المورد</th>
+                            <td>{{ invoice.supplier.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>الهاتف</th>
+                            <td>{{ invoice.supplier.phone|default:"غير محدد" }}</td>
+                        </tr>
+                        <tr>
+                            <th>العنوان</th>
+                            <td>{{ invoice.supplier.address|default:"غير محدد" }}</td>
+                        </tr>
+                    {% endif %}
+                </table>
+            </div>
+            <div class="col-md-6">
+                <div class="section-title">الملخص المالي</div>
+                <table class="info-table">
+                    <tr>
+                        <th>الإجمالي قبل الخصم</th>
+                        <td>{{ invoice.subtotal_before_discount|floatformat:2 }} ر.س</td>
+                    </tr>
+                    <tr>
+                        <th>نسبة الخصم</th>
+                        <td>{{ invoice.discount_percentage|floatformat:2 }}%</td>
+                    </tr>
+                    <tr>
+                        <th>قيمة الخصم</th>
+                        <td>{{ invoice.discount|floatformat:2 }} ر.س</td>
+                    </tr>
+                    <tr>
+                        <th>المجموع قبل الضريبة</th>
+                        <td>{{ invoice.subtotal_before_tax|floatformat:2 }} ر.س</td>
+                    </tr>
+                    <tr>
+                        <th>نسبة الضريبة</th>
+                        <td>{{ invoice.tax_rate|floatformat:2 }}%</td>
+                    </tr>
+                    <tr>
+                        <th>مبلغ الضريبة</th>
+                        <td>{{ invoice.tax_amount|floatformat:2 }} ر.س</td>
+                    </tr>
+                    <tr style="background-color: var(--light-background); font-weight: bold;">
+                        <th>الإجمالي النهائي</th>
+                        <td>{{ invoice.total_amount|floatformat:2 }} ر.س</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        {% if invoice.invoice_subtype == 'returned' %}
+            <div class="alert alert-warning" role="alert">
+                <strong>تنبيه:</strong> هذه فاتورة مرتجعة. يرجى مراجعة الفاتورة الأصلية.
+            </div>
+        {% elif invoice.invoice_subtype == 'installment' %}
+            <div class="alert alert-info" role="alert">
+                <strong>تنبيه:</strong> هذه فاتورة تقسيط. يرجى مراجعة تفاصيل الأقساط أدناه.
+            </div>
+        {% endif %}
+
+        <div class="mb-5">
+            <div class="section-title">عناصر الفاتورة</div>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>المنتج</th>
+                            <th>الوحدة</th>
+                            <th>الكمية</th>
+                            <th>السعر الوحدوي</th>
+                            <th>المجموع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in invoice_items %}
+                            <tr>
+                                <td>{{ item.product.name_ar }}</td>
+                                <td>
+                                    {% if item.unit %}
+                                        {{ item.unit.larger_unit_name|default:item.base_unit.abbreviation }}
+                                    {% else %}
+                                        {{ item.base_unit.abbreviation }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.unit_price|floatformat:2 }} ر.س</td>
+                                <td>{{ item.total|floatformat:2 }} ر.س</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if invoice.invoice_subtype == 'installment' %}
+        <div class="mb-5">
+            <div class="section-title">تفاصيل الأقساط</div>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>رقم القسط</th>
+                            <th>تاريخ الاستحقاق</th>
+                            <th>قيمة القسط</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for installment in invoice.installments.all %}
+                            <tr>
+                                <td>{{ installment.number }}</td>
+                                <td>{{ installment.due_date|date:"Y-m-d" }}</td>
+                                <td>{{ installment.amount|floatformat:2 }} ر.س</td>
+                                <td>{{ installment.get_status_display }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">لا توجد تفاصيل أقساط</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if invoice.qr_code %}
+        <div class="qr-code-section text-center">
+            <div class="section-title">رمز QR للفاتورة</div>
+            <img src="{{ invoice.qr_code.url }}" alt="QR Code" class="img-thumbnail">
+        </div>
+        {% endif %}
+
+        <div class="back-btn text-center">
+            <a href="{% url 'sales_invoice_list' %}" class="btn btn-secondary">العودة إلى قائمة الفواتير</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

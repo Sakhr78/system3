@@ -1,0 +1,17 @@
+'''
+    def generate_invoice_number(self):
+        current_year = timezone.now().year
+        last_invoice = Invoice.objects.filter(
+            invoice_number__startswith=f"INV-{current_year}-"
+        ).order_by('-id').first()
+        if last_invoice:
+            try:
+                last_number = int(last_invoice.invoice_number.split('-')[-1])
+            except (ValueError, IndexError):
+                last_number = 0
+            new_number = f"{current_year}-{last_number + 1:04d}"
+        else:
+            new_number = f"{current_year}-0001"
+        return f"INV-{new_number}"
+'''
+    

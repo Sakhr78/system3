@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  /* تنسيق عام للوحة الإحصائيات */
+  .dashboard-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #fff;
+      border: 1px solid #e3e6f0;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      direction: rtl;
+  }
+  .stat-box {
+      display: inline-block;
+      width: 23%;
+      margin: 1%;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .stat-box h3 {
+      margin: 0;
+      color: #007bff;
+      font-size: 24px;
+  }
+  .stat-box p {
+      margin: 5px 0 0;
+      font-size: 16px;
+      color: #555;
+  }
+  @media (max-width: 768px) {
+      .stat-box {
+          width: 48%;
+          margin: 1%;
+      }
+  }
+  .chart-container {
+      max-width: 800px;
+      margin: 30px auto;
+  }
+  .recent-invoices, .top-customers, .top-suppliers {
+      margin-top: 30px;
+  }
+  .recent-invoices table,
+  .top-customers table,
+  .top-suppliers table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+  }
+  .recent-invoices th, .recent-invoices td,
+  .top-customers th, .top-customers td,
+  .top-suppliers th, .top-suppliers td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+  }
+  .recent-invoices thead th,
+  .top-customers thead th,
+  .top-suppliers thead th {
+      background-color: #007bff;
+      color: #fff;
+  }
+  @media (max-width: 768px) {
+      .recent-invoices th,
+      .recent-invoices td,
+      .top-customers th,
+      .top-customers td,
+      .top-suppliers th,
+      .top-suppliers td {
+          font-size: 12px;
+          padding: 8px;
+      }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4 dashboard-container">
+  <h2 class="text-center mb-4">{{ title|default:"لوحة الإحصاءات" }}</h2>
+  
+  <!-- مربعات الإحصائيات -->
+  <div class="row text-center">
+    <div class="stat-box">
+      <h3>{{ invoice_count }}</h3>
+      <p>عدد الفواتير</p>
+    </div>
+    <div class="stat-box">
+      <h3>{{ total_sales|floatformat:2 }} ر.س</h3>
+      <p>إجمالي المبيعات</p>
+    </div>
+    <div class="stat-box">
+      <h3>{{ avg_invoice|floatformat:2 }} ر.س</h3>
+      <p>متوسط الفاتورة</p>
+    </div>
+    <div class="stat-box">
+      <h3>{{ total_tax|floatformat:2 }} ر.س</h3>
+      <p>إجمالي الضريبة</p>
+    </div>
+  </div>
+  
+  <!-- مخطط بياني باستخدام Chart.js -->
+  <div class="chart-container">
+    <canvas id="salesChart"></canvas>
+  </div>
+  
+  <!-- قائمة أحدث الفواتير -->
+  <div class="recent-invoices">
+    <h3 class="text-center mb-3">أحدث الفواتير (مبيعات)</h3>
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>رقم الفاتورة</th>
+            <th>العميل</th>
+            <th>تاريخ الفاتورة</th>
+            <th>المجموع النهائي</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for invoice in sales_invoices %}
+          <tr>
+            <td>{{ invoice.invoice_number }}</td>
+            <td>{{ invoice.customer.name }}</td>
+            <td>{{ invoice.invoice_date|date:"Y-m-d" }}</td>
+            <td>{{ invoice.total_amount|floatformat:2 }} ر.س</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-center">لا توجد فواتير مضافة</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- احصائيات العملاء للمبيعات -->
+  <div class="top-customers">
+    <h3 class="text-center mb-3">إحصائيات العملاء (مبيعات)</h3>
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>اسم العميل</th>
+            <th>عدد الفواتير</th>
+            <th>إجمالي الشراء</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in customer_sales_stats %}
+          <tr>
+            <td>{{ row.customer__name }}</td>
+            <td>{{ row.invoice_count }}</td>
+            <td>{{ row.total_spent|floatformat:2 }} ر.س</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-center">لا توجد بيانات عملاء</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- احصائيات الموردين (للمشتريات) -->
+  <div class="top-suppliers">
+    <h3 class="text-center mb-3">إحصائيات الموردين (مشتريات)</h3>
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>اسم المورد</th>
+            <th>عدد الفواتير</th>
+            <th>إجمالي المشتريات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in supplier_purchase_stats %}
+          <tr>
+            <td>{{ row.supplier__name }}</td>
+            <td>{{ row.invoice_count }}</td>
+            <td>{{ row.total_spent|floatformat:2 }} ر.س</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-center">لا توجد بيانات موردين</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- زر تصدير التقارير -->
+  <div class="text-center mt-4">
+    <a href="" class="btn btn-success">
+      <i class="fas fa-file-excel"></i> تصدير إلى Excel
+    </a>
+  </div>
+  
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- تحميل مكتبة Chart.js من CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // إعداد بيانات المخطط (يمكنك تخصيص البيانات بناءً على متطلباتك)
+  const ctx = document.getElementById('salesChart').getContext('2d');
+  const salesChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+          labels: ['عدد الفواتير', 'إجمالي المبيعات', 'متوسط الفاتورة', 'إجمالي الضريبة'],
+          datasets: [{
+              label: 'إحصائيات المبيعات',
+              data: [
+                  {{ invoice_count }},
+                  {{ total_sales|floatformat:2 }},
+                  {{ avg_invoice|floatformat:2 }},
+                  {{ total_tax|floatformat:2 }}
+              ],
+              backgroundColor: [
+                  'rgba(0, 123, 255, 0.7)',
+                  'rgba(40, 167, 69, 0.7)',
+                  'rgba(255, 193, 7, 0.7)',
+                  'rgba(220, 53, 69, 0.7)'
+              ],
+              borderColor: [
+                  'rgba(0, 123, 255, 1)',
+                  'rgba(40, 167, 69, 1)',
+                  'rgba(255, 193, 7, 1)',
+                  'rgba(220, 53, 69, 1)'
+              ],
+              borderWidth: 1
+          }]
+      },
+      options: {
+          scales: {
+              y: {
+                  beginAtZero: true
+              }
+          },
+          plugins: {
+              legend: {
+                  display: false
+              }
+          }
+      }
+  });
+</script>
+{% endblock %}

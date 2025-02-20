@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  /* يمكن إعادة استخدام نفس تنسيق CSS كما في purchase_invoice_list.html */
+  .invoice-list-container {
+      max-width: 1200px;
+      margin: 20px auto;
+  }
+  .invoice-list-container .card {
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  .invoice-list-container .card-header {
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #e3e6f0;
+  }
+  .invoice-list-container h4.fw-bold {
+      font-size: 24px;
+      margin-bottom: 20px;
+  }
+  .table-responsive {
+      margin-top: 20px;
+  }
+  table.table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+  }
+  table.table th,
+  table.table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+  }
+  table.table thead th {
+      background-color: #007bff;
+      color: #fff;
+  }
+  table.table tbody tr:nth-child(odd) {
+      background-color: #f2f2f2;
+  }
+  @media (max-width: 768px) {
+      table.table th,
+      table.table td {
+          font-size: 12px;
+          padding: 8px;
+      }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y invoice-list-container">
+
+ 
+    <div class="d-flex justify-content-between align-items-center fw-light">
+      <h4 class="fw-bold  mb-4">
+        قائمة فواتير مشتريات
+        </h4>
+        <div>
+            <a href="{% url 'create_purchase_invoice' %}" class="btn btn-info me-2">  
+                <i class="fas fa-edit me-1"></i>  اضافة فاتوره  
+            </a>  
+        </div>
+  
+  </div>
+  <hr class="my-2">
+ 
+ 
+    <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">فواتير مشتريات</h5>
+      <small class="text-muted float-end">خيارات التحرير</small>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive text-nowrap">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>رقم الفاتورة</th>
+              <th>المورد</th>
+              <th>تاريخ الفاتورة</th>
+              <th>المجموع النهائي</th>
+              <th>نوع الفاتورة</th>
+              <th>الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for invoice in invoices %}
+            <tr>
+              <td>{{ invoice.invoice_number }}</td>
+              <td>{{ invoice.supplier.name }}</td>
+              <td>{{ invoice.invoice_date|date:"Y-m-d" }}</td>
+              <td>{{ invoice.total_amount|floatformat:2 }} ر.س</td>
+              <td>{{ invoice.get_invoice_type_display }}</td>
+              <td>
+                <div class="">
+                 
+                  <a class="" href="{% url 'edit_purchase_invoice' invoice.id %}">
+                    <i class="bx bx-edit-alt me-1"></i> تعديل
+                  </a>
+                  <a class="delete-invoice-btn" href="javascript:void(0);" 
+                     data-invoice-id="{{ invoice.id }}" 
+                     data-invoice-number="{{ invoice.invoice_number }}">
+                    <i class="bx bx-trash me-1"></i> حذف
+                  </a>
+                  <a class="" href="{% url 'invoice_print_view' invoice.id %}" target="_blank">
+                    <i class="bx bx-printer me-1"></i> طباعه
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center">لا توجد فواتير مشتريات مضافة حتى الآن</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <hr class="my-5" />
+  
+  <!-- Modal تأكيد حذف الفاتورة (يمكن إعادة استخدام نفس Modal كما في صفحة المشتريات) -->
+  <div class="modal fade" id="deleteInvoiceModal" tabindex="-1" aria-labelledby="deleteInvoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post" id="deleteInvoiceForm">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteInvoiceModalLabel">تأكيد حذف الفاتورة</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>هل أنت متأكد من حذف الفاتورة رقم <strong id="modalInvoiceNumber"></strong>؟</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button type="submit" class="btn btn-danger">حذف الفاتورة</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+</div>
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+  // ربط حدث زر الحذف في الجدول لفتح نافذة التأكيد (Modal)
+  document.querySelectorAll('.delete-invoice-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      var invoiceId = this.getAttribute('data-invoice-id');
+      var invoiceNumber = this.getAttribute('data-invoice-number');
+      document.getElementById('modalInvoiceNumber').innerText = invoiceNumber;
+      
+      var deleteUrl = "{% url 'delete_purchase_invoice' 0 %}";
+      deleteUrl = deleteUrl.replace('/0/', '/' + invoiceId + '/');
+      document.getElementById('deleteInvoiceForm').action = deleteUrl;
+      
+      var deleteModal = new bootstrap.Modal(document.getElementById('deleteInvoiceModal'));
+      deleteModal.show();
+    });
+  });
+</script>
+{% endblock %}

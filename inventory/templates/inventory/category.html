@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h2 class="mb-4 text-center">{{ title }}</h2>
+
+  <!-- قسم إدارة التصنيفات -->
+  <div class="mb-5">
+    <div class="text-end mb-3">
+      <button class="btn btn-primary" id="btnAddNewCategory">
+        <i class="fas fa-plus"></i> إضافة تصنيف جديد
+      </button>
+    </div>
+    <div class="card">
+      <h5 class="card-header">التصنيفات</h5>
+      <div class="table-responsive text-nowrap">
+        <table class="table table-striped" id="categoryTable">
+          <thead>
+            <tr>
+              <th>اسم التصنيف</th>
+              <th>الوصف</th>
+              <th style="width:150px;">الإجراء</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for category in categories %}
+            <tr id="row-category-{{ category.id }}">
+              <td class="td-name">{{ category.name }}</td>
+              <td class="td-description">{{ category.description }}</td>
+              <td>
+                <button class="btn btn-sm btn-warning btnEditCategory" data-id="{{ category.id }}">تعديل</button>
+                <button class="btn btn-sm btn-danger btnDeleteCategory" data-id="{{ category.id }}">حذف</button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3">لا توجد تصنيفات</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal لإدارة التصنيفات -->
+<div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="categoryForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="categoryModalLabel">تصنيف جديد</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="edit_id" id="categoryEditId" value="">
+          <div class="mb-3">
+            <label for="id_name" class="form-label">اسم التصنيف</label>
+            {{ category_form.name }}
+            <div class="text-danger small" id="err_name"></div>
+          </div>
+          <div class="mb-3">
+            <label for="id_description" class="form-label">الوصف</label>
+            {{ category_form.description }}
+            <div class="text-danger small" id="err_description"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+          <button type="submit" class="btn btn-primary" id="categorySaveBtn">حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+  const categoryCreateOrUpdateURL = "{% url 'ajax_create_or_update_category' %}";
+  const categoryDeleteURL = "{% url 'ajax_delete_category' %}";
+
+  var categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'), {});
+
+  function clearCategoryErrors() {
+    document.getElementById('err_name').innerText = "";
+    document.getElementById('err_description').innerText = "";
+  }
+
+  // زر "إضافة تصنيف جديد"
+  document.getElementById('btnAddNewCategory').addEventListener('click', function() {
+    document.getElementById('categoryModalLabel').innerText = "إضافة تصنيف جديد";
+    document.getElementById('categoryEditId').value = "";
+    document.getElementById('id_name').value = "";
+    document.getElementById('id_description').value = "";
+    clearCategoryErrors();
+    categoryModal.show();
+  });
+
+  // ربط أزرار تعديل التصنيف
+  document.querySelectorAll('.btnEditCategory').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      let rowId = this.dataset.id;
+      let row = document.getElementById('row-category-' + rowId);
+      let name = row.querySelector('.td-name').innerText.trim();
+      let description = row.querySelector('.td-description').innerText.trim();
+      document.getElementById('categoryModalLabel').innerText = "تعديل تصنيف";
+      document.getElementById('categoryEditId').value = rowId;
+      document.getElementById('id_name').value = name;
+      document.getElementById('id_description').value = description;
+      clearCategoryErrors();
+      categoryModal.show();
+    });
+  });
+
+  // ربط أزرار حذف التصنيف
+  document.querySelectorAll('.btnDeleteCategory').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (!confirm("هل أنت متأكد من الحذف؟")) return;
+      let deleteId = this.dataset.id;
+      let formData = new FormData();
+      formData.append('delete_id', deleteId);
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+      axios.post(categoryDeleteURL, formData)
+        .then(response => {
+          if (response.data.status === 'success') {
+            document.getElementById('row-category-' + deleteId).remove();
+            alert("تم الحذف بنجاح!");
+          } else {
+            alert("حدث خطأ أثناء الحذف.");
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          alert("خطأ في الاتصال بالسيرفر.");
+        });
+    });
+  });
+
+  // إرسال نموذج التصنيف (إنشاء أو تعديل)
+  document.getElementById('categoryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    clearCategoryErrors();
+    let formData = new FormData(this);
+    axios.post(categoryCreateOrUpdateURL, formData)
+      .then(response => {
+        let data = response.data;
+        if (data.status === 'success') {
+          let rowId = data.id;
+          let existingRow = document.getElementById('row-category-' + rowId);
+          let name = document.getElementById('id_name').value;
+          let description = document.getElementById('id_description').value;
+          if (!existingRow) {
+            let newRow = document.createElement('tr');
+            newRow.id = 'row-category-' + rowId;
+            newRow.innerHTML = `
+              <td class="td-name">${name}</td>
+              <td class="td-description">${description}</td>
+              <td>
+                <button class="btn btn-sm btn-warning btnEditCategory" data-id="${rowId}">تعديل</button>
+                <button class="btn btn-sm btn-danger btnDeleteCategory" data-id="${rowId}">حذف</button>
+              </td>
+            `;
+            document.querySelector('#categoryTable tbody').prepend(newRow);
+          } else {
+            existingRow.querySelector('.td-name').innerText = name;
+            existingRow.querySelector('.td-description').innerText = description;
+          }
+          categoryModal.hide();
+          alert("تم الحفظ بنجاح!");
+          rebindCategoryButtons();
+        } else if (data.status === 'error') {
+          let errors = data.errors;
+          for (let field in errors) {
+            document.getElementById('err_' + field).innerText = errors[field];
+          }
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        alert("حدث خطأ أثناء الاتصال بالسيرفر.");
+      });
+  });
+
+  function rebindCategoryButtons() {
+    document.querySelectorAll('.btnEditCategory').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        let rowId = this.dataset.id;
+        let row = document.getElementById('row-category-' + rowId);
+        let name = row.querySelector('.td-name').innerText.trim();
+        let description = row.querySelector('.td-description').innerText.trim();
+        document.getElementById('categoryModalLabel').innerText = "تعديل تصنيف";
+        document.getElementById('categoryEditId').value = rowId;
+        document.getElementById('id_name').value = name;
+        document.getElementById('id_description').value = description;
+        clearCategoryErrors();
+        categoryModal.show();
+      });
+    });
+    document.querySelectorAll('.btnDeleteCategory').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (!confirm("هل أنت متأكد من الحذف؟")) return;
+        let deleteId = this.dataset.id;
+        let formData = new FormData();
+        formData.append('delete_id', deleteId);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        axios.post(categoryDeleteURL, formData)
+          .then(response => {
+            if (response.data.status === 'success') {
+              document.getElementById('row-category-' + deleteId).remove();
+              alert("تم الحذف بنجاح!");
+            } else {
+              alert("حدث خطأ أثناء الحذف.");
+            }
+          })
+          .catch(error => {
+            console.error(error);
+            alert("خطأ في الاتصال بالسيرفر.");
+          });
+      });
+    });
+  }
+
+});
+</script>
+{% endblock %}

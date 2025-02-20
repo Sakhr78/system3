@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h2 class="mb-4 text-center">{{ title|default:"إدارة المنتجات (AJAX + Modal)" }}</h2>
+
+    <div class="text-end mb-3">
+        <button class="btn btn-primary" id="btnAddNew">
+            <i class="fas fa-plus"></i> إضافة منتج جديد
+        </button>
+    </div>
+
+    <div class="card">
+        <h5 class="card-header">المنتجات</h5>
+        <div class="table-responsive text-nowrap">
+            <table class="table table-striped" id="productTable">
+                <thead>
+                    <tr>
+                        <th>الاسم بالعربي</th>
+                        <th>الرقم التسلسل </th>
+                        <th>الصنف</th>
+                        <th>الوحدة</th>
+                        <th>السعر</th>
+                        <th>الوصف</th>
+                        <th>المخزون</th>
+                        <th>حد التنبيه</th>
+                        <th style="width: 200px;">الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody class="table-border-bottom-0">
+                    {% for product in products %}
+                    <tr id="row-{{ product.id }}">
+                        <td class="td-name_ar">{{ product.name_ar }}</td>
+                        <td class="td-serial_number">{{ product.serial_number|default:"-" }}</td>
+                        <td class="td-category" data-id="{{ product.category.id }}">{{ product.category }}</td>
+                        <td class="td-unit" data-id="{{ product.unit.id }}">{{ product.unit }}</td>
+                        <td class="td-price">{{ product.price }}</td>
+                        <td class="td-description">{{ product.description|default:"-" }}</td>
+                        <td class="td-stock">{{ product.stock }}</td>
+                        <td class="td-low_stock_threshold">{{ product.low_stock_threshold }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning btnEdit" data-id="{{ product.id }}">
+                                تعديل
+                            </button>
+                            <button class="btn btn-sm btn-danger btnDelete" data-id="{{ product.id }}">
+                                حذف
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9">لا توجد منتجات</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal لإضافة/تعديل المنتج -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+        <form id="productForm">
+            {% csrf_token %}
+  
+            <div class="modal-header">
+              <h5 class="modal-title" id="productModalLabel">منتج جديد</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="edit_id" id="editIdInput" value="">
+
+               
+                    <div class="row g-2">
+                        <div class="col mb-0">
+                          <label for="id_name_ar" class="form-label">الاسم بالعربي</label>
+                          <input type="text" class="form-control" name="name_ar" id="id_name_ar">
+                          <div class="text-danger small" id="err_name_ar"></div>
+                        </div>
+                        <div class="col mb-0">
+                            <label for="id_serial_number" class="form-label">الرقم التسلسل </label>
+                            <input type="text" class="form-control" name="serial_number" id="id_serial_number">
+                            <div class="text-danger small" id="err_serial_number"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_category" class="form-label">الصنف</label>
+                        {{ form.category }} {# عرض حقل category من النموذج #}
+                        <div class="text-danger small" id="err_category"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_unit" class="form-label">الوحدة</label>
+                        {{ form.unit }} {# عرض حقل unit من النموذج #}
+                        <div class="text-danger small" id="err_unit"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_price" class="form-label">السعر</label>
+                        <input type="number" class="form-control" name="price" id="id_price" step="0.01">
+                        <div class="text-danger small" id="err_price"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_description" class="form-label">الوصف</label>
+                        <textarea class="form-control" name="description" id="id_description" rows="2"></textarea>
+                        <div class="text-danger small" id="err_description"></div>
+                    </div>
+                    <div class="row g-2">
+                      <div class="col mb-0">
+                        <label for="id_stock" class="form-label">المخزون</label>
+                        <input type="number" class="form-control" name="stock" id="id_stock" min="0">
+                        <div class="text-danger small" id="err_stock"></div>
+                      </div>
+                      <div class="col mb-0">
+                          <label for="id_low_stock_threshold" class="form-label">حد التنبيه</label>
+                          <input type="number" class="form-control" name="low_stock_threshold" id="id_low_stock_threshold" min="0">
+                          <div class="text-danger small" id="err_low_stock_threshold"></div>
+                      </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                    <button type="submit" class="btn btn-primary" id="btnSave">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    const createOrUpdateURL = "{% url 'ajax_create_or_update_product' %}";
+    const deleteURL = "{% url 'ajax_delete_product' %}";
+
+    // تأكد من تحميل Bootstrap JS (يفضل تضمينه في base.html)
+    var productModal = new bootstrap.Modal(document.getElementById('productModal'), {});
+
+    function clearErrors() {
+        document.getElementById('err_name_ar').innerText = "";
+        document.getElementById('err_serial_number').innerText = "";
+        document.getElementById('err_category').innerText = "";
+        document.getElementById('err_unit').innerText = "";
+        document.getElementById('err_price').innerText = "";
+        document.getElementById('err_description').innerText = "";
+        document.getElementById('err_stock').innerText = "";
+        document.getElementById('err_low_stock_threshold').innerText = "";
+    }
+
+    // زر "إضافة منتج جديد"
+    document.getElementById('btnAddNew').addEventListener('click', function() {
+      document.getElementById('productModalLabel').innerText = "إضافة منتج جديد";
+      document.getElementById('editIdInput').value = "";
+      document.getElementById('id_name_ar').value = "";
+      document.getElementById('id_serial_number').value = "";
+      document.getElementById('id_price').value = "";
+      document.getElementById('id_description').value = "";
+      document.getElementById('id_stock').value = "";
+      document.getElementById('id_low_stock_threshold').value = "";
+      clearErrors();
+  
+      // Show the modal FIRST
+      productModal.show();
+  
+      // THEN access the select elements inside the shown.bs.modal event handler
+      productModal._element.addEventListener('shown.bs.modal', function() {
+          document.getElementById('id_category').selectedIndex = 0;
+          document.getElementById('id_unit').selectedIndex = 0;
+      }, {once: true}); // {once: true} makes the listener fire only once and then it will be removed.
+  
+    });
+
+    // ربط أزرار "تعديل" لكل صف
+    document.querySelectorAll('.btnEdit').forEach(function(btn) {
+        btn.onclick = function() {
+            let rowId = this.dataset.id;
+            let row = document.getElementById('row-' + rowId);
+
+            let name_ar = row.querySelector('.td-name_ar').innerText.trim();
+            let serial_number = row.querySelector('.td-serial_number').innerText.trim();
+            let categoryId = row.querySelector('.td-category').dataset.id;
+            let unitId = row.querySelector('.td-unit').dataset.id;
+            let price = row.querySelector('.td-price').innerText.trim();
+            let description = row.querySelector('.td-description').innerText.trim();
+            let stock = row.querySelector('.td-stock').innerText.trim();
+            let low_stock_threshold = row.querySelector('.td-low_stock_threshold').innerText.trim();
+
+            document.getElementById('productModalLabel').innerText = "تعديل منتج";
+            document.getElementById('editIdInput').value = rowId;
+            document.getElementById('id_name_ar').value = name_ar;
+            document.getElementById('id_serial_number').value = serial_number;
+            document.getElementById('id_category').value = categoryId;
+            document.getElementById('id_unit').value = unitId;
+            document.getElementById('id_price').value = price;
+            document.getElementById('id_description').value = description;
+            document.getElementById('id_stock').value = stock;
+            document.getElementById('id_low_stock_threshold').value = low_stock_threshold;
+
+            clearErrors();
+            productModal.show();
+        };
+    });
+
+    // ربط أزرار "حذف" لكل صف
+    document.querySelectorAll('.btnDelete').forEach(function(btn) {
+        btn.onclick = function() {
+            if (!confirm("هل أنت متأكد من الحذف؟")) return;
+            let deleteId = this.dataset.id;
+
+            let formData = new FormData();
+            formData.append('delete_id', deleteId);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            axios.post(deleteURL, formData)
+                .then(response => {
+                    if (response.data.status === 'success') {
+                        document.getElementById('row-' + deleteId).remove();
+                        alert("تم الحذف بنجاح!");
+                    } else {
+                        alert("حدث خطأ أثناء الحذف.");
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("خطأ في الاتصال بالسيرفر.");
+                });
+        };
+    });
+
+    // عند تقديم نموذج الإضافة/التعديل
+    document.getElementById('productForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        clearErrors();
+
+        let formData = new FormData(this);
+
+        axios.post(createOrUpdateURL, formData)
+            .then(response => {
+                let data = response.data;
+                if (data.status === 'success') {
+                    let rowId = data.id;
+                    let existingRow = document.getElementById('row-' + rowId);
+
+                    let categoryName = document.getElementById('id_category').options[document.getElementById('id_category').selectedIndex].text;
+                    let unitName = document.getElementById('id_unit').options[document.getElementById('id_unit').selectedIndex].text;
+
+                    if (!existingRow) {
+                        let newRow = document.createElement('tr');
+                        newRow.id = 'row-' + rowId;
+                        newRow.innerHTML = `
+                            <td class="td-name_ar">${data.name_ar}</td>
+                            <td class="td-serial_number">${data.serial_number || '-'}</td>
+                            <td class="td-category" data-id="${data.category}">${categoryName}</td>
+                            <td class="td-unit" data-id="${data.unit}">${unitName}</td>
+                            <td class="td-price">${data.price}</td>
+                            <td class="td-description">${data.description || '-'}</td>
+                            <td class="td-stock">${data.stock}</td>
+                            <td class="td-low_stock_threshold">${data.low_stock_threshold}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning btnEdit" data-id="${rowId}">
+                                    تعديل
+                                </button>
+                                <button class="btn btn-sm btn-danger btnDelete" data-id="${rowId}">
+                                    حذف
+                                </button>
+                            </td>
+                        `;
+                        document.querySelector('#productTable tbody').prepend(newRow);
+                    } else {
+                        existingRow.querySelector('.td-name_ar').innerText = data.name_ar;
+                        existingRow.querySelector('.td-serial_number').innerText = data.serial_number || '-';
+                        existingRow.querySelector('.td-category').innerText = categoryName;
+                        existingRow.querySelector('.td-category').dataset.id = data.category;
+                        existingRow.querySelector('.td-unit').innerText = unitName;
+                        existingRow.querySelector('.td-unit').dataset.id = data.unit;
+                        existingRow.querySelector('.td-price').innerText = data.price;
+                        existingRow.querySelector('.td-description').innerText = data.description || '-';
+                        existingRow.querySelector('.td-stock').innerText = data.stock;
+                        existingRow.querySelector('.td-low_stock_threshold').innerText = data.low_stock_threshold;
+                    }
+
+                    productModal.hide();
+                    alert("تم الحفظ بنجاح!");
+
+                    // إعادة ربط أحداث الأزرار على الصفوف الجديدة
+                    rebindTableButtons();
+                } else if (data.status === 'error') {
+                    let errors = data.errors;
+                    for (let field in errors) {
+                        document.getElementById('err_' + field).innerText = errors[field];
+                    }
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                alert("حدث خطأ أثناء الاتصال بالسيرفر.");
+            });
+    });
+
+    function rebindTableButtons() {
+        document.querySelectorAll('.btnEdit').forEach(function(btn) {
+            btn.onclick = function() {
+                let rowId = this.dataset.id;
+                let row = document.getElementById('row-' + rowId);
+                let name_ar = row.querySelector('.td-name_ar').innerText.trim();
+                let serial_number = row.querySelector('.td-serial_number').innerText.trim();
+                let categoryId = row.querySelector('.td-category').dataset.id;
+                let unitId = row.querySelector('.td-unit').dataset.id;
+                let price = row.querySelector('.td-price').innerText.trim();
+                let description = row.querySelector('.td-description').innerText.trim();
+                let stock = row.querySelector('.td-stock').innerText.trim();
+                let low_stock_threshold = row.querySelector('.td-low_stock_threshold').innerText.trim();
+
+                document.getElementById('productModalLabel').innerText = "تعديل منتج";
+                document.getElementById('editIdInput').value = rowId;
+                document.getElementById('id_name_ar').value = name_ar;
+                document.getElementById('id_serial_number').value = serial_number;
+                document.getElementById('id_category').value = categoryId;
+                document.getElementById('id_unit').value = unitId;
+                document.getElementById('id_price').value = price;
+                document.getElementById('id_description').value = description;
+                document.getElementById('id_stock').value = stock;
+                document.getElementById('id_low_stock_threshold').value = low_stock_threshold;
+                clearErrors();
+                productModal.show();
+            };
+        });
+
+        document.querySelectorAll('.btnDelete').forEach(function(btn) {
+            btn.onclick = function() {
+                if (!confirm("هل أنت متأكد من الحذف؟")) return;
+                let deleteId = this.dataset.id;
+                let formData = new FormData();
+                formData.append('delete_id', deleteId);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                axios.post(deleteURL, formData)
+                    .then(response => {
+                        if (response.data.status === 'success') {
+                            document.getElementById('row-' + deleteId).remove();
+                            alert("تم الحذف بنجاح!");
+                        } else {
+                            alert("حدث خطأ أثناء الحذف.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        alert("خطأ في الاتصال بالسيرفر.");
+                    });
+            };
+        });
+    }
+</script>
+{% endblock %}

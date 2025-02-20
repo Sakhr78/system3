@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+
+  <!-- شريط التنقل العلوي (Breadcrumb) -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#">المحاسبة</a></li>
+      <li class="breadcrumb-item"><a href="#">الفواتير</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+    </ol>
+  </nav>
+
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">{{ title }}</h4>
+      <div>
+        <!-- زر تعديل الفاتورة (مثال) -->
+        <a href="" class="btn btn-warning me-2">
+          <i class="fas fa-edit me-1"></i> تعديل
+        </a>
+        <!-- زر للطباعة (يمكن ربطه بصفحة طباعة أو استخدام جافاسكريبت window.print()) -->
+        <button type="button" class="btn btn-secondary" onclick="window.print();">
+          <i class="fas fa-print me-1"></i> طباعة
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <!-- بيانات الفاتورة الأساسية -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <strong>رقم الفاتورة:</strong> {{ invoice.invoice_number }}
+        </div>
+        <div class="col-md-6">
+          <strong>التاريخ:</strong> {{ invoice.invoice_date|date:"Y-m-d H:i" }}
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <strong>العميل:</strong>
+          {% if invoice.customer %}
+            {{ invoice.customer.name }}
+          {% else %}
+            ---
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <strong>طريقة الدفع:</strong>
+          {% if invoice.payment_method %}
+            {{ invoice.payment_method.name }}
+          {% else %}
+            ---
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <strong>نوع الفاتورة:</strong>
+          {% if invoice.invoice_type == "sales" %}
+            فاتورة مبيعات
+          {% elif invoice.invoice_type == "sales_return" %}
+            فاتورة مرتجع مبيعات
+          {% elif invoice.invoice_type == "purchase" %}
+            فاتورة مشتريات
+          {% elif invoice.invoice_type == "purchase_return" %}
+            فاتورة مرتجع مشتريات
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <strong>سبب المرتجع:</strong>
+          {% if invoice.return_reason %}
+            {{ invoice.return_reason }}
+          {% else %}
+            ---
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <strong>الملاحظات:</strong>
+          {% if invoice.notes %}
+            {{ invoice.notes }}
+          {% else %}
+            ---
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- جدول عناصر الفاتورة -->
+      <hr>
+      <h5 class="mb-3">عناصر الفاتورة</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>المنتج</th>
+              <th>الكمية</th>
+              <th>الوحدة</th>
+              <th>السعر الوحدوي</th>
+              <th>المجموع قبل الضريبة</th>
+              <th>المجموع النهائي</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in invoice.invoice_items.all %}
+              <tr>
+                <td>{{ item.product.name_ar }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>
+                  {% if item.unit %}
+                    {{ item.unit.larger_unit_name|default:item.unit.conversion_unit }}
+                  {% else %}
+                    {{ item.base_unit.abbreviation }}
+                  {% endif %}
+                </td>
+                <td>{{ item.unit_price }} ر.س</td>
+                <td>{{ item.total_before_tax }} ر.س</td>
+                <td>{{ item.total }} ر.س</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- الملخص المالي -->
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <strong>الإجمالي قبل الخصم:</strong> {{ invoice.subtotal_before_discount }} ر.س<br>
+          <strong>نسبة الخصم:</strong> {{ invoice.discount_percentage }} %<br>
+          <strong>قيمة الخصم:</strong> {{ invoice.discount }} ر.س<br>
+          <strong>الإجمالي قبل الضريبة:</strong> {{ invoice.subtotal_before_tax }} ر.س<br>
+          <strong>نسبة الضريبة:</strong> {{ invoice.tax_rate }} %<br>
+          <strong>قيمة الضريبة:</strong> {{ invoice.tax_amount }} ر.س<br>
+          <strong>الإجمالي النهائي:</strong> {{ invoice.total_amount }} ر.س
+        </div>
+        <div class="col-md-6 text-center">
+          <!-- إذا كان لديك QR Code -->
+          {% if invoice.qr_code %}
+            <img src="{{ invoice.qr_code.url }}" alt="QR Code" class="mt-3" style="max-width:200px;">
+          {% endif %}
+        </div>
+      </div>
+
+    </div><!-- /card-body -->
+  </div><!-- /card -->
+</div><!-- /container-xxl -->
+
+{% endblock %}

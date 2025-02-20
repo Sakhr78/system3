@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+  <!-- الجزء العلوي: بطاقة ترحيبية وإحصائيات -->
+  <div class="row">
+    <!-- بطاقة ترحيبية -->
+    <div class="col-lg-8 mb-4 order-0">
+      <div class="card">
+        <div class="d-flex align-items-end row">
+          
+          <div class="col-sm-7">
+            <div class="card-body">
+              <h5 class="card-title text-primary">مرحباً بك في لوحة التحكم الشاملة!</h5>
+              <p class="mb-4">
+                تابع هنا <span class="fw-bold">إحصائيات</span> فواتير المبيعات والمشتريات، وتفاصيل الضريبة العامة.
+              </p>
+              <a href="javascript:;" class="btn btn-sm btn-outline-primary">عرض التقارير</a>
+            </div>
+          </div>
+          <div class="col-sm-5 text-center text-sm-left">
+            <div class="card-body pb-0 px-0 px-md-4">
+              <img src="{% static 'assets/img/illustrations/man-with-laptop-light.png' %}" height="140" alt="Dashboard Welcome" data-app-dark-img="{% static 'assets/img/illustrations/man-with-laptop-dark.png' %}" data-app-light-img="{% static 'assets/img/illustrations/man-with-laptop-light.png' %}" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- بطاقتان: إجمالي المبيعات وعدد فواتير المبيعات -->
+    <div class="col-lg-4 col-md-4 order-1">
+      <div class="row">
+        <!-- إجمالي المبيعات -->
+        <div class="col-lg-6 col-md-12 col-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <span class="fw-semibold d-block mb-1">إجمالي المبيعات</span>
+              <h3 class="card-title mb-2">{{ sales_stats.total_sales|floatformat:2 }} ر.س</h3>
+              <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +10% نمو</small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- عدد فواتير المبيعات -->
+        <div class="col-lg-6 col-md-12 col-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <span>عدد فواتير المبيعات</span>
+              <h3 class="card-title text-nowrap mb-1">{{ sales_stats.invoice_count }}</h3>
+              <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +5% عن الشهر الماضي</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- قسم مخطط بياني للمبيعات والمشتريات -->
+    <div class="col-12 col-lg-8 order-2 order-md-3 order-lg-2 mb-4">
+      
+      <div class="row text-center">
+        <!-- إضافة فاتورة مبيعات -->
+        <div class="col-6 col-sm-6 col-md-3 mb-4">
+          <a href="{% url 'create_sales_invoice' %}" class="text-decoration-none">
+            <div class="card">
+              <div class="card-body text-center">
+                <span> فاتورة مبيعات</span>
+                <h3 class="card-title mb-2">
+                  <i class="fas fa-file-invoice-dollar fa-2x"></i>
+                </h3>
+                <small class="text-info fw-semibold text-primary">
+                  <i class="bx bx-info-circle "></i> اضغط للإضافة
+                </small>
+              </div>
+            </div>
+          </a>
+        </div>
+        
+        <!-- إضافة فاتورة مشتريات -->
+        <div class="col-6 col-sm-6 col-md-3 mb-4">
+          <a href="{% url 'create_purchase_invoice' %}" class="text-decoration-none">
+            <div class="card">
+              <div class="card-body text-center">
+                <span> فاتورة مشتريات</span>
+                <h3 class="card-title mb-2">
+                  <i class="fas fa-file-invoice fa-2x"></i>
+                </h3>
+                <small class="text-info fw-semibold text-primary">
+                  <i class="bx bx-info-circle "></i> اضغط للإضافة
+                </small>
+              </div>
+            </div>
+          </a>
+        </div>
+        
+        <!-- إضافة عميل -->
+        <div class="col-6 col-sm-6 col-md-3 mb-4">
+          <a href="{% url 'create_customer' %}" class="text-decoration-none">
+            <div class="card">
+              <div class="card-body text-center">
+                <span>إضافة عميل</span>
+                <h3 class="card-title mb-2">
+                  <i class="fas fa-user-plus fa-2x"></i>
+                </h3>
+                <small class="text-info fw-semibold text-primary">
+                  <i class="bx bx-info-circle "></i> اضغط للإضافة
+                </small>
+              </div>
+            </div>
+          </a>
+        </div>
+        
+        <!-- إضافة مورد -->
+        <div class="col-6 col-sm-6 col-md-3 mb-4">
+          <a href="{% url 'create_supplier' %}" class="text-decoration-none">
+            <div class="card">
+              <div class="card-body text-center">
+                <span>إضافة مورد</span>
+                <h3 class="card-title mb-2">
+                  <i class="fas fa-truck fa-2x"></i>
+                </h3>
+                <small class="text-info fw-semibold text-primary">
+                  <i class="bx bx-info-circle "></i> اضغط للإضافة
+                </small>
+              </div>
+            </div>
+          </a>
+        </div>
+
+      
+        <div class="col-6 col-sm-6 col-md-3 mb-4">
+          <a href="{% url 'manage_products' %}" class="text-decoration-none">
+            <div class="card">
+              <div class="card-body text-center">
+                <span>إضافة منتج</span>
+                <h3 class="card-title mb-2">
+                  <i class="fas fa-truck fa-2x"></i>
+                </h3>
+                <small class="text-info fw-semibold text-primary">
+                  <i class="bx bx-info-circle "></i> اضغط للإضافة
+                </small>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="col-6 col-sm-6 col-md-3 mb-4">
+          <a href="{% url 'manage_categories' %}" class="text-decoration-none">
+            <div class="card">
+              <div class="card-body text-center">
+                <span>إضافة مجموعة</span>
+                <h3 class="card-title mb-2">
+                  <i class="fas fa-truck fa-2x"></i>
+                </h3>
+                <small class="text-info fw-semibold text-primary">
+                  <i class="bx bx-info-circle "></i> اضغط للإضافة
+                </small>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="col-6 col-sm-6 col-md-3 mb-4">
+          <a href="{% url 'manage_units' %}" class="text-decoration-none">
+            <div class="card">
+              <div class="card-body text-center ">
+                <span>إضافة وحدة</span>
+                <h3 class="card-title mb-2">
+                  <i class="fas fa-truck fa-2x"></i>
+                </h3>
+                <small class="text-info fw-semibold text-primary">
+                  <i class="bx bx-info-circle "></i> اضغط للإضافة
+                </small>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+      
+      
+      <div class="card">
+        <h5 class="card-header m-0 pb-3">مقارنة المبيعات والمشتريات</h5>
+        <div class="card-body">
+          <div class="row row-bordered g-0">
+            <div class="col-md-12">
+              <div style="max-width: 800px; margin: 0 auto;">
+                <canvas id="salesPurchaseChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+    </div>
+    
+    <!-- قسم المشتريات -->
+    <div class="col-12 col-md-8 col-lg-4 order-3 order-md-2">
+      <div class="row">
+        <!-- إجمالي المشتريات -->
+        <div class="col-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <span class="d-block mb-1">إجمالي المشتريات</span>
+              <h3 class="card-title text-nowrap mb-2">{{ purchase_stats.total_purchases|floatformat:2 }} ر.س</h3>
+              <small class="text-danger fw-semibold"><i class="bx bx-down-arrow-alt"></i> -2% عن الشهر الماضي</small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- عدد فواتير المشتريات -->
+        <div class="col-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <span class="fw-semibold d-block mb-1">عدد فواتير المشتريات</span>
+              <h3 class="card-title mb-2">{{ purchase_stats.invoice_count }}</h3>
+              <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +3% عن الشهر الماضي</small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- إجمالي الضريبة -->
+        <div class="col-12 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-2 text-muted">إجمالي الضريبة (مشتريات)</h6>
+                  <h3 class="text-primary">{{ purchase_stats.total_tax|floatformat:2 }} ر.س</h3>
+                </div>
+                <div class="avatar flex-shrink-0">
+                  <img src="{% static 'assets/img/icons/unicons/cc-primary.png' %}" alt="tax" class="rounded" style="height:50px;" />
+                </div>
+              </div>
+              <small class="text-muted">إجمالي الضريبة على فواتير المشتريات</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- صف آخر لعرض أحدث الفواتير -->
+  <div class="row">
+
+
+    
+    <!-- أحدث فواتير المبيعات -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="card-title m-0 me-2">أحدث فواتير المبيعات</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>رقم الفاتورة</th>
+                  <th>العميل</th>
+                  <th>التاريخ</th>
+                  <th>الإجمالي</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for inv in sales_stats.recent_invoices %}
+                <tr>
+                  <td>{{ inv.invoice_number }}</td>
+                  <td>{{ inv.customer.name }}</td>
+                  <td>{{ inv.invoice_date|date:"Y-m-d" }}</td>
+                  <td>{{ inv.total_amount|floatformat:2 }} ر.س</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center">لا توجد فواتير</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- أحدث فواتير المشتريات -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="card-title m-0 me-2">أحدث فواتير المشتريات</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>رقم الفاتورة</th>
+                  <th>المورد</th>
+                  <th>التاريخ</th>
+                  <th>الإجمالي</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for inv in purchase_stats.recent_invoices %}
+                <tr>
+                  <td>{{ inv.invoice_number }}</td>
+                  <td>{{ inv.supplier.name }}</td>
+                  <td>{{ inv.invoice_date|date:"Y-m-d" }}</td>
+                  <td>{{ inv.total_amount|floatformat:2 }} ر.س</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center">لا توجد فواتير</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- تحميل مكتبة Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // إعداد المخطط البياني للمبيعات والمشتريات
+  const ctx = document.getElementById('salesPurchaseChart').getContext('2d');
+  const salesInvoiceCount = {{ sales_stats.invoice_count }};
+  const salesTotal = {{ sales_stats.total_sales|floatformat:2 }};
+  const purchaseInvoiceCount = {{ purchase_stats.invoice_count }};
+  const purchaseTotal = {{ purchase_stats.total_purchases|floatformat:2 }};
+  
+  const salesPurchaseChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['فواتير المبيعات', 'إجمالي المبيعات', 'فواتير المشتريات', 'إجمالي المشتريات'],
+      datasets: [{
+        label: 'المبيعات والمشتريات',
+        data: [salesInvoiceCount, salesTotal, purchaseInvoiceCount, purchaseTotal],
+        backgroundColor: [
+          'rgba(0, 123, 255, 0.7)',
+          'rgba(40, 167, 69, 0.7)',
+          'rgba(255, 193, 7, 0.7)',
+          'rgba(220, 53, 69, 0.7)'
+        ],
+        borderColor: [
+          'rgba(0, 123, 255, 1)',
+          'rgba(40, 167, 69, 1)',
+          'rgba(255, 193, 7, 1)',
+          'rgba(220, 53, 69, 1)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+</script>
+{% endblock %}

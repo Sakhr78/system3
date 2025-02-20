@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  /* تنسيق عام لصفحة تعديل بيانات المورد */
+  .supplier-form-container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      direction: rtl;
+      text-align: right;
+  }
+  .supplier-form-container h4 {
+      margin-bottom: 20px;
+      color: #007bff;
+      text-align: center;
+  }
+  .form-group {
+      margin-bottom: 15px;
+  }
+  .input-group-text {
+      background-color: #007bff;
+      color: #fff;
+  }
+  /* استخدام شبكة Bootstrap لتقسيم الحقول على الشاشات الأكبر */
+  .row .col-md-6 {
+      margin-bottom: 15px;
+  }
+  @media (max-width: 768px) {
+      .supplier-form-container {
+          padding: 10px;
+      }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h4 class="fw-bold py-3 mb-4">
+    <span class="text-muted fw-light">Suppliers/</span> تعديل بيانات المورد
+  </h4>
+  <div class="row">
+    <div class="col-xl">
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">تعديل بيانات المورد</h5>
+          <small class="text-muted float-end">قم بتحديث البيانات حسب الحاجة</small>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- اسم المورد -->
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.name.id_for_label }}">
+                <i class="bx bx-building"></i> اسم المورد
+              </label>
+              <div class="input-group input-group-merge">
+                <span class="input-group-text"><i class="bx bx-building"></i></span>
+                {{ form.name }}
+              </div>
+            </div>
+
+          
+
+            <!-- رقم الهاتف / الجوال -->
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.phone.id_for_label }}">
+                <i class="bx bx-phone"></i> رقم الهاتف / الجوال
+              </label>
+              <div class="input-group input-group-merge">
+                <span class="input-group-text"><i class="bx bx-phone"></i></span>
+                {{ form.phone }}
+              </div>
+            </div>
+
+            <!-- البريد الإلكتروني -->
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.email.id_for_label }}">
+                <i class="bx bx-envelope"></i> البريد الإلكتروني
+              </label>
+              <div class="input-group input-group-merge">
+                <span class="input-group-text"><i class="bx bx-envelope"></i></span>
+                {{ form.email }}
+              </div>
+              <div class="form-text">مثال: example@example.com</div>
+            </div>
+
+            <!-- العنوان: سطر 1 -->
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.address_line.id_for_label }}">
+                <i class="bx bx-map"></i> عنوان الشارع 1
+              </label>
+              <div class="input-group input-group-merge">
+                <span class="input-group-text"><i class="bx bx-map"></i></span>
+                {{ form.address_line }}
+              </div>
+            </div>
+
+          
+
+            <!-- المدينة والمنطقة -->
+            <div class="row mb-3">
+              <div class="form-group col-12 col-md-6">
+                <label class="form-label" for="{{ form.city.id_for_label }}">
+                  <i class="bx bx-city"></i> المدينة
+                </label>
+                <div class="input-group input-group-merge">
+                  <span class="input-group-text"><i class="bx bx-city"></i></span>
+                  {{ form.city }}
+                </div>
+              </div>
+              
+            </div>
+
+            <!-- الرمز البريدي والبلد -->
+            <div class="row mb-3">
+              <div class="form-group col-12 col-md-6">
+                <label class="form-label" for="{{ form.country.id_for_label }}">
+                  <i class="bx bx-flag"></i> البلد
+                </label>
+                <div class="input-group input-group-merge">
+                  <span class="input-group-text"><i class="bx bx-flag"></i></span>
+                  {{ form.country }}
+                </div>
+              </div>
+            </div>
+
+            <!-- البيانات الضريبية والتجارية -->
+            <div class="row mb-3">
+              <div class="form-group col-12 col-md-6">
+                <label class="form-label" for="{{ form.vat_number.id_for_label }}">
+                  <i class="bx bx-receipt"></i> الرقم الضريبي
+                </label>
+                <div class="input-group input-group-merge">
+                  <span class="input-group-text"><i class="bx bx-receipt"></i></span>
+                  {{ form.vat_number }}
+                </div>
+              </div>
+              <div class="form-group col-12 col-md-6">
+                <label class="form-label" for="{{ form.cr_number.id_for_label }}">
+                  <i class="bx bx-file"></i> رقم السجل التجاري
+                </label>
+                <div class="input-group input-group-merge">
+                  <span class="input-group-text"><i class="bx bx-file"></i></span>
+                  {{ form.cr_number }}
+                </div>
+              </div>
+            </div>
+
+            <!-- الملاحظات -->
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.notes.id_for_label }}">
+                <i class="bx bx-sticky-note"></i> ملاحظات إضافية
+              </label>
+              {{ form.notes }}
+            </div>
+
+            <!-- الشعار -->
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.logo.id_for_label }}">
+                <i class="bx bx-image"></i> شعار الشركة
+              </label>
+              {{ form.logo }}
+            </div>
+
+            <!-- زر التحديث -->
+            <button type="submit" class="btn btn-primary">تحديث المورد</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
