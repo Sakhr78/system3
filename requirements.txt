@@ -19,4 +19,4 @@ whitenoise>=6.0.0
 
 
 num2words
-+django-mptt>=0.14.0
+django-mptt>=0.14.0
