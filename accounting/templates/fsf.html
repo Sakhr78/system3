@@ -1,0 +1,381 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  /* تنسيق عام */
+  body {
+    font-family: 'Tahoma', sans-serif;
+    direction: rtl;
+    text-align: right;
+    margin: 0;
+    padding: 0;
+  }
+
+  .invoice-wrapper {
+    width: 800px;
+    margin: 20px auto;
+    background-color: #fff;
+  }
+  .invoice-container {
+    padding: 15px 20px;
+    border: 1px solid #000;
+  }
+
+  /* فواصل */
+  hr {
+    border: 1px solid black;
+    margin: .1rem 0 !important;
+  }
+
+  /* معلومات الشركة */
+  .company-info {
+    text-align: center;
+    margin-bottom: 10px;
+    margin-top: 10px;
+  }
+  .company-info h2 {
+    font-weight: bold;
+    font-size: 22px;
+    margin: 0;
+  }
+  .company-info .header p {
+    margin: 2px 0;
+  }
+
+  /* عنوان السند */
+  .voucher-title {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  .voucher-title p {
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #0026ff;
+    margin: 0;
+  }
+  .voucher-type {
+    display: inline-block;
+    border: 2px solid #0026ff;
+    padding: 5px 15px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #0026ff;
+    border-radius: 8px;
+  }
+
+  /* الجداول */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+  }
+  .td, .th td, .table th {
+    border: 1px solid #000;
+    padding: 6px;
+    font-size: 14px;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .table th {
+    background-color: #f2f2f2;
+    text-align: center;
+  }
+  .info-table td {
+    width: 25%;
+    vertical-align: middle;
+  }
+  .details-table th {
+    text-align: center;
+  }
+  .details-table td {
+    text-align: center;
+  }
+
+  /* الملخص المالي */
+  .small-summary-table {
+    float: right;
+    width: 400px;
+    border: 1px solid #ddd;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin-top: 10px;
+  }
+  .small-summary-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .small-summary-table th,
+  .small-summary-table td {
+    padding: 2px 12px;
+    text-align: right;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+  }
+  .small-summary-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* تذييل */
+  .invoice-footer {
+    width: 100%;
+    margin-top: 20px;
+    padding-top: 10px;
+  }
+  .invoice-footer table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+  }
+  .footer-cell {
+    vertical-align: middle !important;
+    width: 33%;
+    font-size: 16px;
+    color: #0026ff;
+    font-weight: bold;
+    padding: 0 10px;
+  }
+  .line-wrapper {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+  }
+  .line-wrapper .label {
+    margin-right: 5px;
+  }
+  .line {
+    flex: 1;
+    border-bottom: 1px dashed #000;
+  }
+
+  /* إعدادات الطباعة */
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    .invoice-wrapper, .invoice-wrapper * {
+      visibility: visible;
+    }
+    .invoice-container {
+      position: relative;  
+      width: 100% !important;
+      min-height: calc(297mm - 20mm);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100% !important;
+      border: none;
+      box-shadow: none;
+      padding: 0 10mm 20mm 10mm;
+      page-break-inside: avoid;
+      overflow: visible !important;
+      border: none;
+      box-shadow: none;
+      padding: 0 10mm 20mm 10mm;
+      page-break-inside: avoid;
+    }
+    html, body {
+      width: 210mm;
+      height: 297mm;
+      margin: 0;
+      padding: 0;
+    }
+    @page {
+      size: A4 portrait;
+      margin: 5mm;
+    }
+    /* إخفاء زر الطباعة */
+    .print-button {
+      display: none;
+    }
+  }
+</style>
+
+<!-- زر للطباعة -->
+<button type="button" class="btn btn-primary print-button" onclick="window.print();">
+  <i class="fas fa-print"></i> طباعة
+</button>
+
+<div class="invoice-wrapper">
+  <div class="invoice-container">
+
+    <!-- فواصل علوية -->
+    <hr>
+    <hr>
+
+    <!-- معلومات الشركة -->
+    <div class="company-info">
+      {% if company and company.name %}
+        <h2>{{ company.name }}</h2>
+      {% else %}
+        <h2>اسم الشركة/المؤسسة</h2>
+      {% endif %}
+      <div class="header">
+        {% if company and company.address %}<p>{{ company.address }}</p>{% endif %}
+        {% if company and company.fax %}<p>س.ت: {{ company.fax }}</p>{% endif %}
+        {% if company and company.phone %}<p>هاتف: {{ company.phone }}</p>{% endif %}
+        {% if company and company.vat_number %}<p>الرقم الضريبي: {{ company.vat_number }}</p>{% endif %}
+      </div>
+    </div>
+
+    <hr>
+    <hr>
+
+    <!-- عنوان السند -->
+    <div class="voucher-title">
+      <p>
+        {% comment %}
+          نحدد نوع السند:
+          - إذا payment.customer موجود => عميل
+            * receipt => سند قبض من العميل
+            * refund  => سند رد مبلغ للعميل
+          - إذا payment.supplier موجود => مورد
+            * payment => سند صرف للمورد
+            * refund  => سند رد مبلغ للمورد
+        {% endcomment %}
+        {% if payment.customer %}
+          {% if payment.payment_type == 'receipt' %}
+            سند قبض من العميل
+          {% elif payment.payment_type == 'refund' %}
+            سند رد مبلغ للعميل
+          {% else %}
+            سند عميل
+          {% endif %}
+        {% elif payment.supplier %}
+          {% if payment.payment_type == 'payment' %}
+            سند صرف للمورد
+          {% elif payment.payment_type == 'refund' %}
+            سند رد مبلغ للمورد
+          {% else %}
+            سند مورد
+          {% endif %}
+        {% else %}
+          سند دفع/قبض
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- معلومات أساسية (تاريخ، رقم السند) -->
+    <table class="table info-table">
+      <tr>
+        <td class="td"><strong>التاريخ</strong></td>
+        <td class="td">{{ payment.date|date:"d/m/Y" }}</td>
+        <td class="td"><strong>رقم السند</strong></td>
+        <td class="td">{{ payment.voucher_number }}</td>
+      </tr>
+      <tr>
+        {% if payment.customer %}
+          <td class="td"><strong>اسم العميل</strong></td>
+          <td class="td">{{ payment.customer.name }}</td>
+        {% elif payment.supplier %}
+          <td class="td"><strong>اسم المورد</strong></td>
+          <td class="td">{{ payment.supplier.name }}</td>
+        {% else %}
+          <td class="td"><strong>الحساب</strong></td>
+          <td class="td">---</td>
+        {% endif %}
+        <td class="td"><strong>مبلغ السند</strong></td>
+        <td class="td">{{ payment.amount|floatformat:2 }}</td>
+      </tr>
+    </table>
+
+    <!-- جدول الملاحظات -->
+    <table class="table">
+      <tr>
+        <td class="td" style="width: 15%;"><strong>ملاحظات</strong></td>
+        <td class="td">{{ payment.notes|default:"لا توجد ملاحظات" }}</td>
+      </tr>
+    </table>
+
+    <!-- جدول الحسابات / مدين / دائن -->
+    <table class="table details-table">
+      <thead>
+        <tr>
+          <th>الحساب</th>
+          <th>مدين</th>
+          <th>دائن</th>
+          <th>البيان</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <!-- تحديد الحساب بالاستناد إلى هل هو عميل أم مورد -->
+          <td class="td">
+            {% if payment.customer %}
+              #{{ payment.customer.name }}
+            {% elif payment.supplier %}
+              #{{ payment.supplier.name }}
+            {% else %}
+              ---
+            {% endif %}
+          </td>
+
+          <!-- تحديد المدين/الدائن بالاعتماد على payment_type -->
+          <td class="td">
+            {% if payment.customer %}
+              {% if payment.payment_type == 'refund' %}
+                {{ payment.amount|floatformat:2 }}
+              {% else %}
+                0.00
+              {% endif %}
+            {% else %}
+              {% if payment.payment_type == 'refund' %}
+                {{ payment.amount|floatformat:2 }}
+              {% else %}
+                0.00
+              {% endif %}
+            {% endif %}
+          </td>
+
+          <td class="td">
+            {% if payment.customer %}
+              {% if payment.payment_type == 'receipt' %}
+                {{ payment.amount|floatformat:2 }}
+              {% else %}
+                0.00
+              {% endif %}
+            {% else %}
+              {% if payment.payment_type == 'payment' %}
+                {{ payment.amount|floatformat:2 }}
+              {% else %}
+                0.00
+              {% endif %}
+            {% endif %}
+          </td>
+
+          <td class="td">
+            {% if payment.customer %}
+              {% if payment.payment_type == 'receipt' %}
+                دفعة من العميل
+              {% elif payment.payment_type == 'refund' %}
+                رد مبلغ للعميل
+              {% else %}
+                ---
+              {% endif %}
+            {% else %}
+              {% if payment.payment_type == 'payment' %}
+                صرف مبلغ للمورد
+              {% elif payment.payment_type == 'refund' %}
+                رد مبلغ للمورد
+              {% else %}
+                ---
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- جدول إجمالي المدين والدائن -->
+    <table class="table">
+      <tr>
+        <td class="td"><strong>اجمالي المدين</strong></td>
+        <td class="td">{{ total_debit|floatformat:2 }}</td>
+        <td class="td"><strong>اجمالي الدائن</strong></td>
+        <td class="td">{{ total_credit|floatformat:2 }}</td>
+      </tr>
+    </table>
+
+  </div><!-- /invoice-container -->
+</div><!-- /invoice-wrapper -->
+{% endblock %}

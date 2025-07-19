@@ -25,10 +25,10 @@ SECRET_KEY = 'django-insecure-lac-ag58e767t0%)g7^fx$opj5rso3(1d!owup!p&yh542pd^&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [] 
 
 
-# Application definition
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'crispy_forms',
     'crispy_bootstrap5',
-    
+    'accounting',
+
 
 
 ]
@@ -118,12 +119,20 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ar'
 
-TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
 
+TIME_ZONE = 'Asia/Riyadh'
+USE_TZ = False  # تعطيل تخزين التوقيت العالمي UTC
+
+
+
+DATETIME_INPUT_FORMATS = [
+    '%Y-%m-%dT%H:%M',
+    '%Y-%m-%d %H:%M:%S',
+    # وغيرها من الصيغ التي تريد دعمها
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -133,11 +142,18 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+#
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # إعدادات الوسائط (Media)
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+#MEDIA_ROOT = '/home/sakhrsystem/system/system/media'
+#MEDIA_URL = '/media/'
+#STATIC_ROOT = '/home/sakhrsystem/system/system/static'
+#STATIC_URL = '/static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

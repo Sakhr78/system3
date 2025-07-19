@@ -5,9 +5,15 @@ urlpatterns = [
     #مسارات الفاتورة المبيعات
     path('list/sales/', views.sales_invoice_list, name='sales_invoice_list'),
     path('create/sales/', views.create_sales_invoice, name='create_sales_invoice'),
-    path('sales/edit/<int:invoice_id>/', views.update_sales_invoice, name='edit_sales_invoice'),
+    path('sales/<int:invoice_id>/edit', views.update_sales_invoice, name='edit_sales_invoice'),
     path('delete/sales/<int:invoice_id>/', views.delete_sales_invoice, name='delete_sales_invoice'),
     path('sales/detail/<int:invoice_id>/', views.sales_invoice_detail, name='sales_invoice_detail'),
+
+    path('sales/ajax_search/', views.ajax_search_sales_invoices, name='ajax_search_sales_invoices'),
+
+
+    path('customers/add/', views.add_customer, name='add_customer'),
+
 
     #مسارات الفاتورة المرتجعات
     path('sales_returns/list/', views.list_sales_returns, name='list_sales_returns'),

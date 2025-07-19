@@ -8,8 +8,6 @@
   <!-- شريط التنقل العلوي (Breadcrumb) -->
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#">المحاسبة</a></li>
-      <li class="breadcrumb-item"><a href="#">المرتجعات</a></li>
       <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
     </ol>
   </nav>
@@ -18,7 +16,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
       <h4 class="mb-0">{{ title }}</h4>
       <a href="{% url 'create_purchase_return_invoice' %}" class="btn btn-info me-2">  
-        <i class="fas fa-plus"></i> إنشاء مرتجع مشتريات
+        <i class="fas fa-plus"></i> إنشاء مرتجع مبيعات
       </a>
     </div>
     <div class="card-body">
@@ -150,17 +148,17 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${item.invoice_number}</td>
-          <td>${item.invoice_date}</td>
-
           <td>${item.supplier_name}</td>
           <td>${item.total_amount} ر.س</td>
+          <td>${item.invoice_date}</td>
+
           <td class="text-center">
           
             <a href="/purchase_returns/${item.id}/edit" class="btn btn-sm btn-warning" title="تعديل الفاتورة">
               <i class="fas fa-edit"></i> تعديل 
             </a>
          
-            <a href="/purchase_returns/${item.id}" class="btn btn-sm btn-danger" title="تعديل الفاتورة">
+            <a href="/print-view/${item.id}" class="btn btn-sm btn-danger" title="تعديل الفاتورة">
               <i class="fas fa-trash"></i> طباعة
             </a>
 

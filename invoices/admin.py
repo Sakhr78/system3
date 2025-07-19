@@ -131,3 +131,124 @@ class SalesReturnInvoiceAdminExtended(SalesReturnInvoiceAdmin):
     inlines = [InvoiceItemInline]
 
 admin.site.register(Invoice, SalesReturnInvoiceAdminExtended)
+
+
+
+
+
+
+from django.contrib import admin  
+from .models import ChartOfAccount  
+
+class ChartOfAccountAdmin(admin.ModelAdmin):  
+    list_display = ('code', 'name', 'account_type', 'parent', 'is_active', 'balance')  
+    list_filter = ('account_type', 'is_active')  
+    search_fields = ('code', 'name', 'description')  
+    ordering = ('code',)  
+
+admin.site.register(ChartOfAccount, ChartOfAccountAdmin)
+
+
+
+
+
+# admin.py
+
+from django.contrib import admin
+
+
+
+from django.contrib import admin
+from .models import CustomerPayment, SupplierPayment
+
+from django.contrib import admin  
+from .models import CustomerPayment, SupplierPayment  
+
+# تخصيص طريقة عرض نموذج دفعات العملاء  
+@admin.register(CustomerPayment)  
+class CustomerPaymentAdmin(admin.ModelAdmin):  
+    list_display = ['voucher_number', 'customer', 'payment_type', 'amount', 'date', 'payment_method', 'is_posted']  
+    list_filter = ['payment_type', 'payment_method', 'is_posted', 'date']  
+    search_fields = ['voucher_number', 'customer__name', 'notes']  
+    readonly_fields = ['is_posted', 'voucher_number']  
+    date_hierarchy = 'date'  
+
+    fieldsets = (  
+        ('معلومات السند الأساسية', {  
+            'fields': ('voucher_number', 'customer', 'payment_type', 'amount', 'payment_method', 'date'),  
+            'description': 'معلومات أساسية حول سند القبض أو سند رد المبلغ.'  
+        }),  
+        ('تفاصيل إضافية', {  
+            'fields': ('notes', 'is_posted'),  
+            'description': 'ملاحظات إضافية وتفاصيل حالة القيد.'  
+        }),  
+    )  
+
+    # الإجراءات المخصصة (مثال)  
+    # def create_journal_entry_manually(self, request, queryset):  
+    #     for payment in queryset:  
+    #         if not payment.is_posted:  
+    #             payment.create_journal_entry()  
+    #             payment.is_posted = True  
+    #             payment.save()  
+    # create_journal_entry_manually.short_description = "إنشاء قيد اليومية يدويًا"  
+
+    # actions = [create_journal_entry_manually]  
+
+
+# تخصيص طريقة عرض نموذج دفعات الموردين  
+@admin.register(SupplierPayment)  
+class SupplierPaymentAdmin(admin.ModelAdmin):  
+    list_display = ['voucher_number', 'supplier', 'payment_type', 'amount', 'date', 'payment_method', 'is_posted']  
+    list_filter = ['payment_type', 'payment_method', 'is_posted', 'date']  
+    search_fields = ['voucher_number', 'supplier__name', 'notes']  
+    readonly_fields = ['is_posted', 'voucher_number']  
+    date_hierarchy = 'date'  
+
+    fieldsets = (  
+        ('معلومات السند الأساسية', {  
+            'fields': ('voucher_number', 'supplier', 'payment_type', 'amount', 'payment_method', 'date'),  
+            'description': 'معلومات أساسية حول سند الصرف أو سند رد المبلغ.'  
+        }),  
+        ('تفاصيل إضافية', {  
+            'fields': ('notes', 'is_posted'),  
+            'description': 'ملاحظات إضافية وتفاصيل حالة القيد.'  
+        }),  
+    )  
+    
+from django.contrib import admin  
+from .models import CustomerLedger, SupplierLedger  
+
+@admin.register(CustomerLedger)  
+class CustomerLedgerAdmin(admin.ModelAdmin):  
+    list_display = ('customer', 'date', 'description', 'debit', 'credit', 'balance_after')  
+    list_filter = ('customer', 'date')  
+    search_fields = ('customer__name', 'description')  # يمكنك البحث باسم العميل أو الوصف  
+    date_hierarchy = 'date'  
+
+@admin.register(SupplierLedger)  
+class SupplierLedgerAdmin(admin.ModelAdmin):  
+    list_display = ('supplier', 'date', 'description', 'debit', 'credit', 'balance_after')  
+    list_filter = ('supplier', 'date')  
+    search_fields = ('supplier__name', 'description')  # يمكنك البحث باسم المورد أو الوصف  
+    date_hierarchy = 'date'  
+
+
+from django.contrib import admin  
+from .models import JournalEntry, JournalEntryDetail  
+
+class JournalEntryDetailInline(admin.TabularInline):  
+    model = JournalEntryDetail  
+    extra = 1  # عدد الصفوف الإضافية التي ستظهر في النموذج  
+
+@admin.register(JournalEntry)  
+class JournalEntryAdmin(admin.ModelAdmin):  
+    list_display = ('date', 'description', 'created_by')  # الحقول التي ستظهر في قائمة الإدخال  
+    search_fields = ('description',)  # تمكين البحث في الوصف  
+    inlines = [JournalEntryDetailInline]  # تضمين تفاصيل القيد في نموذج القيد المحاسبي  
+
+@admin.register(JournalEntryDetail)  
+class JournalEntryDetailAdmin(admin.ModelAdmin):  
+    list_display = ('entry', 'account', 'debit', 'credit')  # الحقول التي ستظهر في قائمة التفاصيل  
+    search_fields = ('account__name',)  # تمكين البحث في أسماء الحسابات  
+    list_filter = ('entry',)  # تمكين تصفية التفاصيل حسب القيد المحاسبي

@@ -1,202 +1,189 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container-xxl flex-grow-1 container-p-y">
   <!-- شريط التنقل (Breadcrumb) -->
-  
 
   <!-- بطاقة تفاصيل الفاتورة -->
   <div class="row">
     <div class="col-12">
       <div class="card shadow-sm mb-4">
-           
-
         <div class="card-header d-flex justify-content-between align-items-center">
           <h3 class="m-0">
             <i class="fas fa-file-invoice-dollar me-2"></i> تفاصيل الفاتورة: {{ invoice.invoice_number }}
           </h3>
           <div class="btn-group">
             <a href="{% url 'invoice_print_view' invoice.id %}" class="btn btn-primary">
-              <span class="tf-icons bx bx-printer"></span>&nbsp; طباعة الفاتورة             
+              <span class="tf-icons bx bx-printer"></span>&nbsp; طباعة 
             </a>
             <a href="{% url 'edit_purchase_invoice' invoice.id %}" class="btn btn-warning me-2">
               <i class="fas fa-edit me-1"></i> تعديل
             </a>
           </div>
-           
-         
-
-        </div>
-      </div>
-    </div>
-</div>
-<div class="row">
-  <div class="col-12">
-        <div class="card-body">
-          <!-- معلومات الفاتورة الأساسية -->
-          <div class="row mb-4">
-            <div class="col-md-8">
-              <h5 class="text-primary">معلومات الفاتورة</h5>
-              <table class="table table-borderless">
-                <tr>
-                  <th>رقم الفاتورة:</th>
-                  <td>{{ invoice.invoice_number }}</td>
-                </tr>
-                <tr>
-                  <th>تاريخ الفاتورة:</th>
-                  <td>{{ invoice.invoice_date|date:"Y-m-d H:i" }}</td>
-                </tr>
-                <tr>
-                  <th>المورد:</th>
-                  <td>{{ invoice.supplier.name }}</td>
-                </tr>
-                <tr>
-                  <th>نوع الفاتورة:</th>
-                  <td>{{ invoice.get_invoice_type_display }}</td>
-                </tr>
-                
-              </table>
-            </div>
-            <div class="col-md-4">
-              <h5 class="text-primary">الملخص المالي</h5>
-              <table class="table table-borderless">
-                <tr>
-                  <th>الإجمالي قبل الخصم:</th>
-                  <td>{{ invoice.subtotal_before_discount|floatformat:2 }} ر.س</td>
-                </tr>
-                <tr>
-                  <th>نسبة الخصم:</th>
-                  <td>{{ invoice.discount_percentage|floatformat:2 }}%</td>
-                </tr>
-                <tr>
-                  <th>قيمة الخصم:</th>
-                  <td>{{ invoice.discount|floatformat:2 }} ر.س</td>
-                </tr>
-                <tr>
-                  <th>المجموع قبل الضريبة:</th>
-                  <td>{{ invoice.subtotal_before_tax|floatformat:2 }} ر.س</td>
-                </tr>
-                <tr>
-                  <th>نسبة الضريبة:</th>
-                  <td>{{ invoice.tax_rate|floatformat:2 }}%</td>
-                </tr>
-                <tr>
-                  <th>مبلغ الضريبة:</th>
-                  <td>{{ invoice.tax_amount|floatformat:2 }} ر.س</td>
-                </tr>
-                <tr class="bg-primary text-white">
-                  <th>الإجمالي النهائي:</th>
-                  <td>{{ invoice.total_amount|floatformat:2 }} ر.س</td>
-                </tr>
-              </table>
-            </div>
-          </div>
-
-          <!-- عرض التنبيهات الخاصة بأنواع الفواتير -->
-          {% if invoice.invoice_subtype == 'returned' %}
-          <div class="row mb-4">
-            <div class="col-12">
-              <div class="alert alert-warning">
-                <strong>تنبيه:</strong> هذه فاتورة مرتجعة. يرجى مراجعة الفاتورة الأصلية وتأكيد عملية الإرجاع.
-              </div>
-            </div>
-          </div>
-          {% elif invoice.invoice_subtype == 'installment' %}
-          <div class="row mb-4">
-            <div class="col-12">
-              <div class="alert alert-info">
-                <strong>تنبيه:</strong> هذه فاتورة تقسيط. يرجى مراجعة تفاصيل الأقساط أدناه.
-              </div>
-            </div>
-          </div>
-          {% endif %}
-
-          <!-- تفاصيل عناصر الفاتورة -->
-          <div class="row mb-4">
-            <div class="col-12">
-              <div class="table-responsive">
-                <table class="table table-striped">
-                  <thead class="bg-light">
-                    <tr>
-                      <th>المنتج</th>
-                      <th>الوحدة</th>
-                      <th>الكمية</th>
-                      <th>السعر الوحدوي</th>
-                      <th>المجموع</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for item in invoice_items %}
-                    <tr>
-                      <td>{{ item.product.name_ar }}</td>
-                      <td>
-                        {% if item.unit %}
-                          {{ item.unit.larger_unit_name|default:item.base_unit.abbreviation }}
-                        {% else %}
-                          {{ item.base_unit.abbreviation }}
-                        {% endif %}
-                      </td>
-                      <td>{{ item.quantity }}</td>
-                      <td>{{ item.unit_price|floatformat:2 }} ر.س</td>
-                      <td>{{ item.total|floatformat:2 }} ر.س</td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <!-- تفاصيل الأقساط (إن وجدت) -->
-          {% if invoice.invoice_subtype == 'installment' %}
-          <div class="row mb-4">
-            <div class="col-12">
-              <h5 class="text-primary">تفاصيل الأقساط</h5>
-              <div class="table-responsive">
-                <table class="table table-bordered">
-                  <thead>
-                    <tr>
-                      <th>رقم القسط</th>
-                      <th>تاريخ الاستحقاق</th>
-                      <th>قيمة القسط</th>
-                      <th>الحالة</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for installment in invoice.installments.all %}
-                    <tr>
-                      <td>{{ installment.number }}</td>
-                      <td>{{ installment.due_date|date:"Y-m-d" }}</td>
-                      <td>{{ installment.amount|floatformat:2 }} ر.س</td>
-                      <td>{{ installment.get_status_display }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                      <td colspan="4" class="text-center">لا توجد تفاصيل أقساط</td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          {% endif %}
-
-          <!-- عرض رمز QR إن وجد -->
-          {% if invoice.qr_code %}
-          <div class="row mb-4">
-            <div class="col-12 text-center">
-              <h5 class="text-primary">رمز QR للفاتورة</h5>
-              <div style="display: flex; justify-content: center; align-items: center;">  
-                <img src="{{ invoice.qr_code.url }}" alt="QR Code" class="img-thumbnail" style="max-width:200px;">
-              </div>
-            </div>
-          </div>
-          {% endif %}
-          
         </div>
       </div>
     </div>
   </div>
-</div>
+
+  <!-- معلومات الفاتورة -->
+  <div class="row">
+    <div class="col-md-6">
+      <h5 class="text-primary">معلومات الفاتورة</h5>
+      <table class="table table-bordered table-sm">
+        <tr>
+          <th>رقم الفاتورة:</th>
+          <td>{{ invoice.invoice_number }}</td>
+        </tr>
+        <tr>
+          <th>تاريخ الفاتورة:</th>
+          <td>{{ invoice.invoice_date|date:"Y-m-d H:i" }}</td>
+        </tr>
+        <tr>
+          <th>المورد:</th>
+          <td>{{ invoice.supplier.name }}</td>
+        </tr>
+        <tr>
+          <th>نوع الفاتورة:</th>
+          <td>{{ invoice.get_invoice_type_display }}</td>
+        </tr>
+        <tr>
+          <th>طريقة الدفع:</th>
+          <td>{{ invoice.get_payment_method_display }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- الملخص المالي -->
+    <div class="col-md-6">
+      <h5 class="text-primary">الملخص المالي</h5>
+      <table class="table table-bordered table-sm">
+        <tr>
+          <th>الإجمالي قبل الخصم:</th>
+          <td>{{ invoice.subtotal_before_discount|floatformat:2 }} ر.س</td>
+        </tr>
+        <tr>
+          <th>نسبة الخصم:</th>
+          <td>{{ invoice.discount_percentage|floatformat:2 }}%</td>
+          <th>قيمة الخصم:</th>
+          <td>{{ invoice.discount|floatformat:2 }} ر.س</td>
+        </tr>
+        <tr>
+          <th>المجموع قبل الضريبة:</th>
+          <td>{{ invoice.subtotal_before_tax|floatformat:2 }} ر.س</td>
+        </tr>
+        <tr>
+          <th>نسبة الضريبة:</th>
+          <td>{{ invoice.tax_rate|floatformat:2 }}%</td>
+          <th>مبلغ الضريبة:</th>
+          <td>{{ invoice.tax_amount|floatformat:2 }} ر.س</td>
+        </tr>
+        <tr class="bg-primary text-white">
+          <th>الإجمالي النهائي:</th>
+          <td>{{ invoice.total_amount|floatformat:2 }} ر.س</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- عرض التنبيهات الخاصة بأنواع الفواتير -->
+  {% if invoice.invoice_subtype == 'returned' %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="alert alert-warning">
+        <strong>تنبيه:</strong> هذه فاتورة مرتجعة. يرجى مراجعة الفاتورة الأصلية وتأكيد عملية الإرجاع.
+      </div>
+    </div>
+  </div>
+  {% elif invoice.invoice_subtype == 'installment' %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="alert alert-info">
+        <strong>تنبيه:</strong> هذه فاتورة تقسيط. يرجى مراجعة تفاصيل الأقساط أدناه.
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- تفاصيل عناصر الفاتورة -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+          <thead class="bg-light">
+            <tr>
+              <th>المنتج</th>
+              <th>الوحدة</th>
+              <th>الكمية</th>
+              <th>السعر</th>
+              <th>المجموع</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in invoice_items %}
+            <tr>
+              <td>{{ item.product.name_ar }}</td>
+              <td>
+                {% if item.unit %}
+                {{ item.unit.larger_unit_name|default:item.base_unit.abbreviation }}
+                {% else %}
+                {{ item.base_unit.abbreviation }}
+                {% endif %}
+              </td>
+              <td>{{ item.quantity }}</td>
+              <td>{{ item.unit_price|floatformat:2 }} ر.س</td>
+              <td>{{ item.total|floatformat:2 }} ر.س</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- تفاصيل الأقساط (إن وجدت) -->
+  {% if invoice.invoice_subtype == 'installment' %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <h5 class="text-primary">تفاصيل الأقساط</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>رقم القسط</th>
+              <th>تاريخ الاستحقاق</th>
+              <th>قيمة القسط</th>
+              <th>الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for installment in invoice.installments.all %}
+            <tr>
+              <td>{{ installment.number }}</td>
+              <td>{{ installment.due_date|date:"Y-m-d" }}</td>
+              <td>{{ installment.amount|floatformat:2 }} ر.س</td>
+              <td>{{ installment.get_status_display }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center">لا توجد تفاصيل أقساط</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- عرض رمز QR إن وجد -->
+  {% if invoice.qr_code %}
+  <div class="row mb-4">
+    <div class="col-12 text-center">
+      <h5 class="text-primary">رمز QR للفاتورة</h5>
+      <div style="display: flex; justify-content: center; align-items: center;">
+        <img src="{{ invoice.qr_code.url }}" alt="QR Code" class="img-thumbnail" style="max-width:200px;">
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  
 {% endblock %}

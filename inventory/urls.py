@@ -2,10 +2,17 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+
     # مسارات إدارة التصنيفات
     path('categories/', views.manage_categories, name='manage_categories'),
     path('ajax_create_or_update_category/', views.ajax_create_or_update_category, name='ajax_create_or_update_category'),
     path('ajax_delete_category/', views.ajax_delete_category, name='ajax_delete_category'),
+
+
+     # ... مسارات أخرى
+    path('products/', views.manage_products, name='manage_products'),
+    path('ajax_create_or_update_product/', views.ajax_create_or_update_product, name='ajax_create_or_update_product'),
+    path('ajax_delete_product/', views.ajax_delete_product, name='ajax_delete_product'),
 
 
 

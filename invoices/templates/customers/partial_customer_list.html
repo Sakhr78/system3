@@ -20,6 +20,8 @@
         <td>
           <a class="btn btn-sm btn-warning ajax-link" href="{% url 'edit_customer' customer.pk %}">تعديل</a>
           <a class="btn btn-sm btn-info ajax-link" href="{% url 'customer_detail' customer.pk %}">عرض التفاصيل</a>
+          <a class="btn btn-sm btn-info ajax-link" href="{% url 'customer_statement_view' customer.pk %}">   طباعة كشف حساب </a>
+
         </td>
       </tr>
       {% empty %}

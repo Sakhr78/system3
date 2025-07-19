@@ -6,7 +6,152 @@ from django.db import transaction
 from django.contrib import messages
 from invoices.models import Invoice, InvoiceItem, Product
 
+#from django.utils.timezone import localtime
 
+from django.conf import settings
+
+
+# فورم فاتورة المبيعات
+
+#from django.utils import timezone
+
+
+class SalesInvoiceForm(forms.ModelForm):
+    class Meta:
+        model = Invoice
+        fields = [
+            'customer', 'invoice_type', 'invoice_number', 'invoice_date',
+            'payment_method', 'notes', 'subtotal_before_discount', 'discount_percentage',
+            'discount', 'subtotal_before_tax', 'tax_rate', 'tax_amount', 'total_amount',
+            'qr_code', 'return_reason', 'original_invoice',
+            # أضف حقل الحالة هنا
+            'status'
+        ]
+        widgets = {
+            'customer': forms.Select(attrs={'class': 'form-control'}),
+            'invoice_type': forms.HiddenInput(),
+            'return_reason': forms.HiddenInput(),
+            'original_invoice': forms.HiddenInput(),
+            'invoice_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'إدخال رقم الفاتورة أو سيقوم النظام بإنشائه تلقائيًا.'
+            }),
+            'invoice_date': forms.DateTimeInput(attrs={
+                'type': 'datetime-local',
+                'class': 'form-control'
+            }),
+            'payment_method': forms.Select(attrs={'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={
+                'rows': 3,
+                'class': 'form-control',
+                'placeholder': 'أية ملاحظات'
+            }),
+            'subtotal_before_discount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01'
+            }),
+            'discount_percentage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01'
+            }),
+            'discount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01'
+            }),
+            'subtotal_before_tax': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01'
+            }),
+            'tax_rate': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01'
+            }),
+            'tax_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01'
+            }),
+            'total_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01'
+            }),
+            'qr_code': forms.FileInput(attrs={'class': 'form-control'}),
+
+            # جعل الحقل status Select
+            'status': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # مثال: تعيين القيمة الافتراضية لحقل invoice_type إلى 'sales'
+        self.fields['customer'].empty_label = "اختار عميل"
+        self.fields['invoice_type'].initial = 'sales'
+        self.fields['invoice_type'].required = False
+        self.instance.invoice_type = 'sales'
+
+        # إذا أردت أن تبدأ الفاتورة بحالة 'draft' دائمًا
+        # يمكنك ضبط ذلك أيضًا:
+        self.fields['status'].initial = 'draft'
+        self.instance.status = 'draft'
+
+
+
+class InvoiceItemForm(forms.ModelForm):
+    unit_price = forms.DecimalField(
+        decimal_places=2,
+        label="السعر ",
+        widget=forms.NumberInput(attrs={'class': 'form-control'})  # السماح بتعديل السعر
+    )
+
+    class Meta:
+        model = InvoiceItem
+        fields = ['product', 'quantity', 'unit', 'unit_price']
+        widgets = {
+            'product': forms.Select(attrs={'class': 'form-control'}),
+            'quantity': forms.NumberInput(attrs={
+                'min': '1',
+                'class': 'form-control',
+                'placeholder': '1'
+            }),
+            'unit': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # إزالة خاصية readonly من حقل unit_price لجعله قابلًا للتعديل
+        self.fields['unit_price'].widget.attrs['readonly'] = False
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.full_clean()
+        if commit:
+            instance.save()
+        return instance
+
+
+
+
+InvoiceItemFormSet = inlineformset_factory(
+    Invoice, InvoiceItem,
+    form=InvoiceItemForm,
+    extra=0,
+    
+    can_delete=True
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#   فاتورة مرتجعة للمبيعات
 class SalesReturnInvoiceForm(forms.ModelForm):
     original_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
 
@@ -125,8 +270,6 @@ class SalesReturnInvoiceForm(forms.ModelForm):
             # دالة generate_invoice_number() ينبغي أن تكون معرفّة في الموديل Invoice
             self.instance.invoice_number = self.instance.generate_invoice_number()
         return super().save(commit=commit)
-
-
 
 class SalesReturnInvoiceItemForm(forms.ModelForm):
     """

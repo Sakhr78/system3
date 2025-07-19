@@ -20,19 +20,7 @@ def sales_invoice_list(request):
     """
     # جلب فواتير المبيعات وترتيبها تنازليًا بحسب تاريخ الفاتورة (الأحدث أولاً)
     invoices = Invoice.objects.filter(invoice_type='sales').order_by('-invoice_date')
-    
-    # خيارات البحث من GET
-    customer = request.GET.get('customer')
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    
-    if customer:
-        invoices = invoices.filter(customer__name__icontains=customer)
-    if start_date:
-        invoices = invoices.filter(invoice_date__gte=start_date)
-    if end_date:
-        invoices = invoices.filter(invoice_date__lte=end_date)
-    
+ 
     context = {
         'invoices': invoices,
         'title': 'قائمة فواتير المبيعات'
@@ -40,7 +28,58 @@ def sales_invoice_list(request):
     return render(request, 'sales/invoice_list.html', context)
 
 
+
+
+def ajax_search_sales_invoices(request):
+    invoice_number = request.GET.get('invoice_number', '').strip()
+    customer_name = request.GET.get('customer_name', '').strip()
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+
+    # فلترة فواتير المبيعات فقط
+    qs = Invoice.objects.filter(invoice_type='sales')
+
+    if invoice_number:
+        qs = qs.filter(invoice_number__icontains=invoice_number)
+
+    if customer_name:
+        qs = qs.filter(customer__name__icontains=customer_name)
+
+    if date_from:
+        try:
+            date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+            qs = qs.filter(invoice_date__date__gte=date_from)
+        except ValueError:
+            pass  # إذا كانت صيغة التاريخ غير صحيحة، يمكن تجاهل الفلترة
+
+    if date_to:
+        try:
+            date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+            qs = qs.filter(invoice_date__date__lte=date_to)
+        except ValueError:
+            pass  # إذا كانت صيغة التاريخ غير صحيحة، يمكن تجاهل الفلترة
+
+    # ترتيب تنازلي (الأحدث أولاً)
+    qs = qs.order_by('-id')
+
+    data = []
+    for invoice in qs:
+        data.append({
+            'id': invoice.id,
+            'invoice_number': invoice.invoice_number,
+            'invoice_date': invoice.invoice_date.strftime('%Y-%m-%d %H:%M'),
+            'customer_name': invoice.customer.name if invoice.customer else '—',
+            'return_reason': invoice.return_reason if invoice.return_reason else '—',
+            'total_amount': str(invoice.total_amount),
+        })
+
+    return JsonResponse({'results': data})
+
+
+
+
 def create_sales_invoice(request):
+    customer_form = CustomerForm()
     if request.method == 'POST':
         form = SalesInvoiceForm(request.POST, request.FILES)
         formset = InvoiceItemFormSet(request.POST, prefix='items')
@@ -62,8 +101,8 @@ def create_sales_invoice(request):
                             product = item.product
                             base_quantity = item.quantity
                             
-                            if product.stock < base_quantity:
-                                raise Exception(f"لا توجد كمية كافية للمنتج {product.name_ar}")
+                            #if product.stock < base_quantity:
+                            #    raise Exception(f"لا توجد كمية كافية للمنتج {product.name_ar}")
                             product.stock -= int(base_quantity)
                             product.save()
 
@@ -89,6 +128,8 @@ def create_sales_invoice(request):
         for conv in UnitConversion.objects.all()
     }
     context = {
+        'customer_form': customer_form,
+
         'form': form,
         'formset': formset,
         'title': 'إنشاء فاتورة مبيعات - النظام المحاسبي',
@@ -97,6 +138,31 @@ def create_sales_invoice(request):
         'conversion_units': json.dumps(conversion_units),
     }
     return render(request, 'sales/create_invoice.html', context)
+
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+
+@csrf_exempt
+def add_customer(request):
+    if request.method == 'POST':
+        form = CustomerForm(request.POST)
+        if form.is_valid():
+            customer = form.save()
+            return JsonResponse({
+                'success': True,
+                'customer_id': customer.id,
+                'customer_name': customer.name
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors.as_json()
+            })
+    return JsonResponse({'success': False, 'errors': 'Invalid request method'})
 
 
 def update_sales_invoice(request, invoice_id):
@@ -234,15 +300,14 @@ def sales_invoice_detail(request, invoice_id):
 
 
 
+from django.http import JsonResponse
+from datetime import datetime
+
 def list_sales_returns(request):
-  
     context = {
         'title': 'قائمة مرتجعات المبيعات (بحث ديناميكي)',
     }
     return render(request, 'sales_returns/list.html', context)
-
-
-
 
 def ajax_search_sales_returns(request):
     invoice_number = request.GET.get('invoice_number', '').strip()
@@ -254,16 +319,24 @@ def ajax_search_sales_returns(request):
     qs = Invoice.objects.filter(invoice_type='sales_return')
 
     if invoice_number:
-        qs = qs.filter(invoice_number__icontains(invoice_number))
+        qs = qs.filter(invoice_number__icontains=invoice_number)
 
     if customer_name:
-        qs = qs.filter(customer__name__icontains(customer_name))
+        qs = qs.filter(customer__name__icontains=customer_name)
 
     if date_from:
-        qs = qs.filter(invoice_date__date__gte=date_from)
+        try:
+            date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+            qs = qs.filter(invoice_date__date__gte=date_from)
+        except ValueError:
+            pass  # إذا كانت صيغة التاريخ غير صحيحة، يمكن تجاهل الفلترة
 
     if date_to:
-        qs = qs.filter(invoice_date__date__lte=date_to)
+        try:
+            date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+            qs = qs.filter(invoice_date__date__lte=date_to)
+        except ValueError:
+            pass  # إذا كانت صيغة التاريخ غير صحيحة، يمكن تجاهل الفلترة
 
     # ترتيب تنازلي (الأحدث أولاً)
     qs = qs.order_by('-id')
@@ -280,7 +353,6 @@ def ajax_search_sales_returns(request):
         })
 
     return JsonResponse({'results': data})
-
 
 
 

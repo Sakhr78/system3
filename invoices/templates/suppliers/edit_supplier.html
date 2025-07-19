@@ -55,115 +55,75 @@
             {% csrf_token %}
             
             <!-- اسم المورد -->
-            <div class="mb-3">
-              <label class="form-label" for="{{ form.name.id_for_label }}">
-                <i class="bx bx-building"></i> اسم المورد
-              </label>
-              <div class="input-group input-group-merge">
-                <span class="input-group-text"><i class="bx bx-building"></i></span>
-                {{ form.name }}
+            <div class="mb-3 row">
+              <div class="form-group col-12 col-md-6">
+
+                <label class="form-label" for="{{ form.name.id_for_label }}">
+                  <i class="bx bx-building"></i> اسم المورد
+                </label>
+                <div class="input-group input-group-merge">
+                  {{ form.name }}
+                </div>
               </div>
+              <div class="form-group col-12 col-md-6">
+                <label class="form-label" for="{{ form.phone.id_for_label }}">
+                  <i class="bx bx-phone"></i> رقم الهاتف / الجوال
+                </label>
+                <div class="input-group input-group-merge">
+                  {{ form.phone }}
+                </div>
+              </div>
+
             </div>
 
-            <!-- جهة الاتصال -->
-            <div class="mb-3">
-              <label class="form-label" for="{{ form.contact_person.id_for_label }}">
-                <i class="bx bx-user"></i> جهة الاتصال
-              </label>
-              <div class="input-group input-group-merge">
-                <span class="input-group-text"><i class="bx bx-user"></i></span>
-                {{ form.contact_person }}
-              </div>
-            </div>
+           
 
-            <!-- رقم الهاتف / الجوال -->
-            <div class="mb-3">
-              <label class="form-label" for="{{ form.phone.id_for_label }}">
-                <i class="bx bx-phone"></i> رقم الهاتف / الجوال
-              </label>
-              <div class="input-group input-group-merge">
-                <span class="input-group-text"><i class="bx bx-phone"></i></span>
-                {{ form.phone }}
+            <div class="mb-3 row">
+              <div class="form-group col-12 col-md-6">
+                <label class="form-label" for="{{ form.email.id_for_label }}">
+                  <i class="bx bx-envelope"></i> البريد الإلكتروني
+                </label>
+                <div class="input-group input-group-merge">
+                  {{ form.email }}
+                </div>
               </div>
-            </div>
-
-            <!-- البريد الإلكتروني -->
-            <div class="mb-3">
-              <label class="form-label" for="{{ form.email.id_for_label }}">
-                <i class="bx bx-envelope"></i> البريد الإلكتروني
-              </label>
-              <div class="input-group input-group-merge">
-                <span class="input-group-text"><i class="bx bx-envelope"></i></span>
-                {{ form.email }}
+              <div class="form-group col-12 col-md-6">
+                <label class="form-label" for="{{ form.address_line.id_for_label }}">
+                  <i class="bx bx-map"></i> العنوان  
+                </label>
+                <div class="input-group input-group-merge">
+                  {{ form.address_line }}
+                </div>
               </div>
-              <div class="form-text">مثال: example@example.com</div>
-            </div>
 
-            <!-- العنوان: سطر 1 -->
-            <div class="mb-3">
-              <label class="form-label" for="{{ form.address_line1.id_for_label }}">
-                <i class="bx bx-map"></i> عنوان الشارع 1
-              </label>
-              <div class="input-group input-group-merge">
-                <span class="input-group-text"><i class="bx bx-map"></i></span>
-                {{ form.address_line1 }}
-              </div>
-            </div>
+            </div>            
 
-            <!-- العنوان: سطر 2 -->
-            <div class="mb-3">
-              <label class="form-label" for="{{ form.address_line2.id_for_label }}">
-                <i class="bx bx-map"></i> عنوان الشارع 2
-              </label>
-              <div class="input-group input-group-merge">
-                <span class="input-group-text"><i class="bx bx-map"></i></span>
-                {{ form.address_line2 }}
-              </div>
-            </div>
-
+          
+          
             <!-- المدينة والمنطقة -->
             <div class="row mb-3">
-              <div class="form-group col-12 col-md-6">
-                <label class="form-label" for="{{ form.city.id_for_label }}">
-                  <i class="bx bx-city"></i> المدينة
-                </label>
-                <div class="input-group input-group-merge">
-                  <span class="input-group-text"><i class="bx bx-city"></i></span>
-                  {{ form.city }}
-                </div>
-              </div>
-              <div class="form-group col-12 col-md-6">
-                <label class="form-label" for="{{ form.region.id_for_label }}">
-                  <i class="bx bx-map-pin"></i> المنطقة / المحافظة
-                </label>
-                <div class="input-group input-group-merge">
-                  <span class="input-group-text"><i class="bx bx-map-pin"></i></span>
-                  {{ form.region }}
-                </div>
-              </div>
-            </div>
 
-            <!-- الرمز البريدي والبلد -->
-            <div class="row mb-3">
-              <div class="form-group col-12 col-md-6">
-                <label class="form-label" for="{{ form.postal_code.id_for_label }}">
-                  <i class="bx bx-mail-send"></i> الرمز البريدي
-                </label>
-                <div class="input-group input-group-merge">
-                  <span class="input-group-text"><i class="bx bx-mail-send"></i></span>
-                  {{ form.postal_code }}
-                </div>
-              </div>
               <div class="form-group col-12 col-md-6">
                 <label class="form-label" for="{{ form.country.id_for_label }}">
                   <i class="bx bx-flag"></i> البلد
                 </label>
                 <div class="input-group input-group-merge">
-                  <span class="input-group-text"><i class="bx bx-flag"></i></span>
                   {{ form.country }}
                 </div>
               </div>
+
+              <div class="form-group col-12 col-md-6">
+                <label class="form-label" for="{{ form.city.id_for_label }}">
+                  <i class="bx bx-city"></i> المدينة
+                </label>
+                <div class="input-group input-group-merge">
+                  {{ form.city }}
+                </div>
+              </div>
+            
             </div>
+
+           
 
             <!-- البيانات الضريبية والتجارية -->
             <div class="row mb-3">
@@ -172,7 +132,6 @@
                   <i class="bx bx-receipt"></i> الرقم الضريبي
                 </label>
                 <div class="input-group input-group-merge">
-                  <span class="input-group-text"><i class="bx bx-receipt"></i></span>
                   {{ form.vat_number }}
                 </div>
               </div>
@@ -181,7 +140,6 @@
                   <i class="bx bx-file"></i> رقم السجل التجاري
                 </label>
                 <div class="input-group input-group-merge">
-                  <span class="input-group-text"><i class="bx bx-file"></i></span>
                   {{ form.cr_number }}
                 </div>
               </div>
@@ -193,14 +151,6 @@
                 <i class="bx bx-sticky-note"></i> ملاحظات إضافية
               </label>
               {{ form.notes }}
-            </div>
-
-            <!-- الشعار -->
-            <div class="mb-3">
-              <label class="form-label" for="{{ form.logo.id_for_label }}">
-                <i class="bx bx-image"></i> شعار الشركة
-              </label>
-              {{ form.logo }}
             </div>
 
             <!-- زر التحديث -->

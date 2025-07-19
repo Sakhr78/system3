@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="fw-bold py-3 mb-4">
+      <span class="text-muted fw-light"></span> قائمة سندات الصرف
+    </h4>
+    
+    <a href="{% url 'create_payment_voucher' %}" class="btn btn-primary mb-3">
+      إضافة سند صرف
+    </a>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="table-responsive text-nowrap">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>رقم السند</th>
+                <th>المورد</th>
+                <th>المبلغ</th>
+                <th>التاريخ</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for voucher in vouchers %}
+              <tr>
+                <td>{{ voucher.voucher_number }}</td>
+                <td>{{ voucher.supplier.name }}</td>
+                <td>{{ voucher.amount }}</td>
+                <td>{{ voucher.date }}</td>
+                <td>
+                  <div class="-menu">
+                    <!-- رابط التعديل -->
+                    <a class="-item" href="{% url 'update_payment_voucher' voucher.pk %}">
+                      <i class="bx bx-edit-alt me-1"></i> تعديل
+                    </a>
+                    <!-- رابط الحذف -->
+                    <a class="-item" href="{% url 'delete_payment_voucher' voucher.pk %}">
+                      <i class="bx bx-trash me-1"></i> حذف
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center">لا توجد سندات صرف</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-5" />
+</div>
+{% endblock %}

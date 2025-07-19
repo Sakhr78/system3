@@ -8,10 +8,15 @@ urlpatterns = [
     #مسارات الفاتورة المبيعات
     path('list/purchase/', views.purchase_invoice_list, name='purchase_invoice_list'),
     path('create/purchase/', views.create_purchase_invoice, name='create_purchase_invoice'),
-    path('purchase/edit/<int:invoice_id>/', views.update_purchase_invoice, name='edit_purchase_invoice'),
+    path('purchase/<int:invoice_id>/edit/', views.update_purchase_invoice, name='edit_purchase_invoice'),
     path('delete/purchase/<int:invoice_id>/', views.delete_purchase_invoice, name='delete_purchase_invoice'),
     path('purchase/detail/<int:invoice_id>/', views.purchase_invoice_detail, name='purchase_invoice_detail'),
+    path('purchase/ajax_search/', views.ajax_search_purchase_invoices, name='ajax_search_purchase_invoices'),
 
+
+    path('suppliers/add/', views.add_supplier, name='add_supplier'),
+
+  
     path('purchase_returns/list/', views.list_purchases_returns, name='list_purchases_returns'),
     path('purchase_returns/ajax_search/', views.ajax_search_purchases_returns, name='ajax_search_purchase_returns'),
     path('purchase_returns/<int:invoice_id>/edit/', views.update_purchase_return_invoice, name='update_purchase_return_invoice'),

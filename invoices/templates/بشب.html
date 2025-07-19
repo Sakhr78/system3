@@ -1,0 +1,72 @@
+       <!-- الملخص المالي -->
+       <div class="small-summary-table">
+        <table>
+            <tr>
+                <th>الإجمالي</th>
+                <td>{{ invoice.subtotal_before_discount|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <th>الخصم</th>
+                <td>
+                    {{ invoice.discount|floatformat:2 }}
+                    {% if invoice.discount != 0 %}
+                    <small>{{ discount_words }}</small>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>بعد الخصم</th>
+                <td>{{ invoice.subtotal_before_tax|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <th>ضريبة (15%)</th>
+                <td>{{ invoice.tax_amount|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <th>المستحق</th>
+                <td>{{ invoice.total_amount|floatformat:2 }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <style>
+        /* تصميم الجدول الصغير للملخص المالي */
+        .small-summary-table {
+            float: right;
+            width: 280px;
+            margin: 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        .small-summary-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .small-summary-table th,
+        .small-summary-table td {
+            padding: 8px 12px;
+            text-align: right;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+        }
+        .small-summary-table th {
+            background-color: #0026ff;
+            color: #fff;
+            font-weight: bold;
+        }
+        .small-summary-table td {
+            color: #333;
+            font-weight: 500;
+        }
+        .small-summary-table tr:last-child td {
+            border-bottom: none;
+        }
+        .small-summary-table small {
+            display: block;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>

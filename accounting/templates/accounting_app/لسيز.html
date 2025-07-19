@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  body {
+    font-family: 'Tahoma', sans-serif;
+    direction: rtl;
+    margin: 0;
+    padding: 0;
+    color: #000;
+  }
+
+  /* حاوية عامة للكشف */
+  .statement-container {
+    width: 95%;
+    max-width: 1200px;
+    margin: 20px auto;
+    background-color: #fff;
+    border: 1px solid #333;
+    padding: 15px;
+  }
+
+  /* تنسيق الجزء العلوي (الهيدر) */
+  .statement-header {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .statement-header h1,
+  .statement-header h2,
+  .statement-header h3 {
+    margin: 4px 0;
+    padding: 0;
+  }
+  .statement-header h1 {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  .statement-header h2 {
+    font-size: 18px;
+    font-weight: bold;
+    color: #0055cc; /* مثال للون */
+  }
+  .statement-header .sub-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #c00; /* لون آخر */
+  }
+
+  /* جدول المعلومات الأساسية (الحساب/التواريخ/العملة...) */
+  .top-info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    margin-bottom: 15px;
+  }
+  .top-info-table td,
+  .top-info-table th {
+    border: 1px solid #666;
+    padding: 6px 10px;
+    font-size: 14px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .top-info-table th {
+    background-color: #f0f0f0;
+  }
+
+  /* تنسيق داخلي لصف يضم تاريخين مثلاً */
+  .dates-row td {
+    background-color: #eef;
+  }
+
+  /* مثال لتنسيق رأس الجدول */
+  .header-label {
+    background-color: #d9edf7;
+    font-weight: bold;
+    color: #333;
+  }
+
+    /* تنسيقات الطباعة */
+   
+    /* إعدادات الطباعة لتوافق مقاسات A4 */
+    @media print {
+        /* إخفاء العناصر غير المهمة */
+        body * {
+            visibility: hidden;
+        }
+        .invoice-wrapper, .invoice-wrapper * {
+            visibility: visible;
+        }
+        .invoice-container {
+            position: relative;  
+            width: 100% !important;
+            min-height: calc(297mm - 20mm); 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            border: none;
+            box-shadow: none;
+            padding: 0 10mm 20mm 10mm; /* ترك هامش سفلي لعدم تقطيع التذييل */
+            /* تجنب قطع الصفحة داخل الفاتورة */
+            page-break-inside: avoid;
+            overflow: visible !important;
+            border: none;
+            box-shadow: none;
+            padding: 0 10mm 20mm 10mm; /* ترك هامش سفلي لعدم تقطيع التذييل */
+            page-break-inside: avoid;
+        }
+        /* يمكن ضبط أبعاد html و body لتكون متوافقة مع A4 */
+         /* تثبيت التذييل في أسفل الفاتورة */
+         .invoice-footer {
+            position: absolute;
+            bottom: 0mm;  /* وضع التذييل على بعد هامش سفلي */
+            left: 0;
+            width: 100%;
+        }
+        .small-summary-table{
+            position: absolute;
+            bottom: 45mm;  /* وضع التذييل على بعد هامش سفلي */
+            left: 0;
+            width: 100%;
+        }
+        html, body {
+            width: 210mm;   /* عرض ورقة A4 */
+            height: 297mm;  /* طول ورقة A4 */
+            margin: 0;
+            padding: 0;
+        }
+        
+        @page {
+            size: A4 portrait;  /* استخدام A4 عمودي */
+            margin: 5mm;       /* هامش مناسب */
+        }
+        /* إخفاء زر الطباعة */
+        .print-button {
+            display: none;
+        }
+    }
+
+
+    
+    /* ===== إعدادات الطباعة (A4 عمودي) ===== */
+    @media print {
+        .invoice-container {
+          width: 100% !important;
+          border: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-shadow: none !important;
+          page-break-inside: avoid;
+          overflow: visible !important;
+        }
+        html, body {
+          width: 100%;
+          height: auto;
+          margin: 0;
+          padding: 0;
+        }
+        @page {
+          size: A4 portrait;
+          margin: 10mm;
+        }
+      }
+
+      .header {  
+        display: flex; /* استخدام فليكس لتنسيق العناصر في نفس السطر */  
+        flex-direction: row; /* عرض العناصر في صف */  
+        justify-content: center;  
+        align-items: center;  
+        font-weight: bold;  
+        line-height: 1.5;  
+    }  
+    
+    .header p {  
+        margin: 0 4px;  
+    }
+
+  .print-button {
+    display: block;
+    margin: 15px auto;
+    padding: 8px 20px;
+    font-size: 14px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  .print-button:hover {
+    background-color: #0056b3;
+  }
+</style>
+
+
+<div class="statement-container">
+  <!-- زر الطباعة -->
+  <button class="print-button" onclick="window.print();">طباعة</button>
+
+  <!-- العنوان العلوي -->
+  <div class="statement-header">
+    <!-- مثال لاسم المؤسسة -->
+    <h1>مؤسسة حمد مسفر نجـا القحطاني للتجارة</h1>
+    <!-- مثال لعنوان فرعي (اختياري) -->
+    <!-- مثال لعنوان توضيحي (اختياري) -->
+    <div class="sub-title">دفتر الاستاذ</div>
+  </div>
+
+  <!-- جدول المعلومات العلوية (مثل الحساب، العملة، التاريخ...) -->
+  <table class="top-info-table">
+    <tr>
+      <th class="header-label" style="width: 25%;">الحساب</th>
+      <td style="width: 25%;">
+        <!-- مثال: رقم الحساب + اسم الحساب -->
+        {{ account_number }} - {{ customer.name }}
+      </td>
+      <th class="header-label" style="width: 25%;">العملة</th>
+      <td style="width: 25%;">
+        <!-- مثال: ريال سعودي -->
+        ريال سعودي
+      </td>
+    </tr>
+    <tr class="dates-row">
+        {% if first_transaction_date %}
+
+      <th class="header-label">اعتبارًا من تاريخ</th>
+      <td> {{ first_transaction_date|date:"Y-m-d" }}</td>
+      {% else %}
+      <p>لا توجد أي حركات سابقة.</p>
+    {% endif %}
+      <th class="header-label">إلى تاريخ</th>
+      <td>{{ print_date|date:"Y-m-d" }}</td>
+    </tr>
+
+
+
+    
+  </table>
+
+  <!-- 
+    بعد ذلك يمكنك وضع جدول الحركات 
+    (تاريخ، رقم المستند، المدين، الدائن، البيان، الرصيد) 
+    أو أي تنسيق آخر.
+    مثال (يمكنك دمج كود جدول الحركات هنا):
+  -->
+
+  <!-- مثال لجدول الحركات (مختصر) -->
+  <table class="top-info-table">
+    <thead>
+      <tr>
+        <th>التاريخ</th>
+        <th>رقم المستند</th>
+        <th>البيان</th>
+        <th>مدين</th>
+        <th>دائن</th>
+        <th>الرصيد</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in statement %}
+      <tr>
+        <td>{{ row.date|date:"d/m/Y" }}</td>
+        <td>{{ row.doc_number }}</td>
+        <td>{{ row.description }}</td>
+        <td>{{ row.debit|floatformat:2 }}</td>
+        <td>{{ row.credit|floatformat:2 }}</td>
+        <td>{{ row.balance|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+          <th colspan="2">المجموع</th>
+          <td>{{ total_debit|floatformat:2 }}</td>
+          <td>{{ total_credit|floatformat:2 }}</td>
+          <td>{{ final_balance|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+  </table>
+
+</div>
+{% endblock %}

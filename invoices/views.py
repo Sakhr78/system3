@@ -22,6 +22,8 @@ from bidi.algorithm import get_display
 
 # مكتبات Django
 from .models import *
+from inventory.forms import *
+
 from decimal import Decimal
 import io
 from datetime import datetime, timedelta
@@ -473,7 +475,7 @@ def edit_supplier(request, supplier_id):
         if form.is_valid():
             form.save()
             messages.success(request, "تم تعديل بيانات المورد بنجاح.")
-            return redirect('supplier_detail', supplier_id=supplier.id)
+            return redirect('supplier_list')
         else:
             messages.error(request, "يرجى تصحيح الأخطاء في النموذج.")
     else:
@@ -556,7 +558,7 @@ def edit_customer(request, customer_id):
         if form.is_valid():
             form.save()
             messages.success(request, "تم تعديل بيانات العميل بنجاح.")
-            return redirect('customer_detail', customer_id=customer.id)
+            return redirect('customer_list')
         else:
             messages.error(request, "يرجى تصحيح الأخطاء في النموذج.")
     else:
@@ -601,67 +603,6 @@ def customer_detail(request, customer_id):
 
 
 
-
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.db import transaction
-from .forms import ProductForm
-from .models import Product
-
-# قائمة المنتجات
-def product_list(request):
-    products = Product.objects.all().order_by('-id')
-    context = {
-        'products': products,
-        'title': 'قائمة المنتجات'
-    }
-    return render(request, 'products/product_list.html', context)
-
-# إنشاء منتج جديد
-def product_create(request):
-    if request.method == 'POST':
-        form = ProductForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "تم إضافة المنتج بنجاح")
-            return redirect('product_list')
-        else:
-            messages.error(request, "يرجى تصحيح الأخطاء في النموذج.")
-    else:
-        form = ProductForm()
-    context = {
-        'form': form,
-        'title': 'إضافة منتج جديد'
-    }
-    return render(request, 'products/product_form.html', context)
-
-# تعديل منتج
-def product_update(request, pk):
-    product = get_object_or_404(Product, pk=pk)
-    if request.method == 'POST':
-        form = ProductForm(request.POST, instance=product)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "تم تعديل المنتج بنجاح")
-            return redirect('product_list')
-        else:
-            messages.error(request, "يرجى تصحيح الأخطاء في النموذج.")
-    else:
-        form = ProductForm(instance=product)
-    context = {
-        'form': form,
-        'title': f'تعديل المنتج: {product.name_ar}'
-    }
-    return render(request, 'products/product_form.html', context)
-
-# حذف منتج
-def product_delete(request, pk):
-    product = get_object_or_404(Product, pk=pk)
-    if request.method == 'POST':
-        product.delete()
-        messages.success(request, "تم حذف المنتج بنجاح.")
-        return redirect('product_list')
 
 
 
@@ -718,68 +659,6 @@ def manage_payment_methods(request):
 
 
 
-
-
-
-from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction
-from .models import Product
-from .forms import ProductForm
-
-@csrf_exempt
-def ajax_create_or_update_product(request):
-    if request.method == 'POST':
-        edit_id = request.POST.get('edit_id')
-        if edit_id:
-            product = get_object_or_404(Product, id=edit_id)
-            form = ProductForm(request.POST, instance=product)
-        else:
-            form = ProductForm(request.POST)
-
-        if form.is_valid():
-            with transaction.atomic():
-                obj = form.save()
-            return JsonResponse({
-                'status': 'success',
-                'id': obj.id,
-                'name_ar': obj.name_ar,
-                'serial_number': obj.serial_number or '',
-                'category': obj.category.id,  # أو obj.category.name إذا كنت تريد الاسم
-                'unit': obj.unit.id,          # أو obj.unit.name إذا كنت تريد الاسم
-                'price': str(obj.price),       # تحويل Decimal إلى String
-                'description': obj.description or '',
-                'stock': obj.stock,
-                'low_stock_threshold': obj.low_stock_threshold
-            })
-        else:
-            errors = {field: str(err[0]) for field, err in form.errors.items()}
-            return JsonResponse({
-                'status': 'error',
-                'errors': errors
-            })
-    return JsonResponse({'status': 'invalid request'}, status=400)
-
-@csrf_exempt
-def ajax_delete_product(request):
-    if request.method == 'POST':
-        delete_id = request.POST.get('delete_id')
-        product = get_object_or_404(Product, id=delete_id)
-        product.delete()
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'invalid request'}, status=400)
-
-def manage_products(request):
-    products = Product.objects.all().order_by('-id')
-    form = ProductForm()  # إنشاء النموذج لتضمينه في القالب
-    context = {
-        'products': products,
-        'title': 'إدارة المنتجات (AJAX + Modal)',
-        'form': form,  # تمرير النموذج إلى القالب
-    }
-    return render(request, 'inventory/products.html', context)
-    
 
 
 

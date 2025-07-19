@@ -3,7 +3,7 @@
 
 {% block extra_css %}
 <style>
-  /* يمكن إعادة استخدام نفس تنسيق CSS كما في sales_invoice_list.html */
+  /* تحسين تنسيق الحقول والتفاعل مع الأزرار */
   .invoice-list-container {
       max-width: 1200px;
       margin: 20px auto;
@@ -47,92 +47,91 @@
           padding: 8px;
       }
   }
-
-  .table thead th {  
-    background-color: #007bff; /* لون خلفية العنوان */  
-    color: white; /* لون النص */  
-    text-align: center; /* محاذاة النص في المنتصف */  
-    padding: 10px; /* مساحة داخلية للنص */  
-}  
-
-.table th {  
-    border-bottom: 2px solid #0056b3; /* حدود أسفل العنوان */  
-}
+  .search-container {
+      margin-bottom: 20px;
+  }
+  .search-container .form-label {
+      font-weight: bold;
+  }
+  .search-container .form-control {
+      border-radius: 5px;
+  }
+  .btn-search, .btn-reset {
+      width: 100px;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-xxl flex-grow-1 container-p-y invoice-list-container">
-  
+  <div class="container-xxl flex-grow-1 container-p-y invoice-list-container">
+    <!-- Title and Add Invoice Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="fw-bold mb-0">{{ title }}</h4>
+      <a href="{% url 'create_sales_invoice' %}" class="btn btn-info">
+        <i class="fas fa-edit me-1"></i> إضافة فاتورة
+      </a>
+    </div>
 
-  <div class="d-flex justify-content-between align-items-center fw-light">
-    
-    <h4 class="fw-bold  mb-4">
-      قائمة فواتير مبيعات
-      </h4>
-      <div>
-          <a href="{% url 'create_sales_invoice' %}" class="btn btn-info me-2">  
-              <i class="fas fa-edit me-1"></i>  اضافة فاتوره  
-          </a>  
+    <!-- Search Filters -->
+    <div class="card">
+      <div class="card-body">
+        <div class="row g-3 mb-4 search-container">
+          <div class="col-md-2">
+            <label for="invoice_number" class="form-label">رقم الفاتورة</label>
+            <input type="text" id="invoice_number" class="form-control" placeholder="ابحث برقم الفاتورة">
+          </div>
+          <div class="col-md-3">
+            <label for="customer_name" class="form-label">اسم العميل</label>
+            <input type="text" id="customer_name" class="form-control" placeholder="ابحث باسم العميل">
+          </div>
+          <div class="col-md-2">
+            <label for="date_from" class="form-label">من تاريخ</label>
+            <input type="date" id="date_from" class="form-control">
+          </div>
+          <div class="col-md-2">
+            <label for="date_to" class="form-label">إلى تاريخ</label>
+            <input type="date" id="date_to" class="form-control">
+          </div>
+          
+          <div class="col-md-3 d-flex align-items-end">
+            <div class="d-flex justify-content-end w-100">
+              <button id="btn-search" class="btn btn-success me-2">
+                <i class="fas fa-search"></i> بحث
+              </button>
+              <button id="btn-reset" class="btn btn-secondary">
+                <i class="fas fa-redo"></i> إعادة تعيين
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+    </div>
 
-</div>
-<hr class="my-2">
+    <!-- Results Table -->
+    <div class="card" style='    MARGIN-TOP: 1REM;'>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>رقم الفاتورة</th>
+                <th>العميل</th>
+                <th>الإجمالي</th>
+                <th>التاريخ</th>
 
-  <div class="card">
-    
-    <div class="card-body">
-      <div class="table-responsive text-nowrap">
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>رقم الفاتورة</th>
-              <th>العميل</th>
-              <th>تاريخ الفاتورة</th>
-              <th>المجموع النهائي</th>
-              <th>نوع الفاتورة</th>
-              <th>الإجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for invoice in invoices %}
-            <tr>
-              <td>{{ invoice.invoice_number }}</td>
-              <td>{{ invoice.customer.name }}</td>
-              <td>{{ invoice.invoice_date|date:"Y-m-d" }}</td>
-              <td>{{ invoice.total_amount|floatformat:2 }} ر.س</td>
-              <td>{{ invoice.get_invoice_type_display }}</td>
-              <td>
-                <div class="">
-                 
-                  <a class="" href="{% url 'edit_sales_invoice' invoice.id %}">
-                    <i class="bx bx-edit-alt me-1"></i> تعديل
-                  </a>
-                  <a class="delete-invoice-btn" href="javascript:void(0);" 
-                     data-invoice-id="{{ invoice.id }}" 
-                     data-invoice-number="{{ invoice.invoice_number }}">
-                    <i class="bx bx-trash me-1"></i> حذف
-                  </a>
-                  <a class="" href="{% url 'invoice_print_view' invoice.id %}" target="_blank">
-                    <i class="bx bx-printer me-1"></i> طباعه
-                  </a>
-                </div>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="6" class="text-center">لا توجد فواتير مشتريات مضافة حتى الآن</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+                <th class="text-center">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody">
+              <!-- سيتم ملؤه ديناميكيًا عبر جافاسكريبت -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
-  
-  <hr class="my-5" />
-  
-  <!-- Modal تأكيد حذف الفاتورة (يمكن إعادة استخدام نفس Modal كما في صفحة المبيعات) -->
+
+  <!-- Modal Confirmation for Deleting Invoice -->
   <div class="modal fade" id="deleteInvoiceModal" tabindex="-1" aria-labelledby="deleteInvoiceModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -153,27 +152,103 @@
       </div>
     </div>
   </div>
-  
-</div>
+
 {% endblock %}
 
 {% block extra_js %}
-
 <script>
-  // ربط حدث زر الحذف في الجدول لفتح نافذة التأكيد (Modal)
-  document.querySelectorAll('.delete-invoice-btn').forEach(function(button) {
-    button.addEventListener('click', function() {
-      var invoiceId = this.getAttribute('data-invoice-id');
-      var invoiceNumber = this.getAttribute('data-invoice-number');
-      document.getElementById('modalInvoiceNumber').innerText = invoiceNumber;
-      
-      var deleteUrl = "{% url 'delete_sales_invoice' 0 %}";
-      deleteUrl = deleteUrl.replace('/0/', '/' + invoiceId + '/');
-      document.getElementById('deleteInvoiceForm').action = deleteUrl;
-      
-      var deleteModal = new bootstrap.Modal(document.getElementById('deleteInvoiceModal'));
-      deleteModal.show();
+  document.addEventListener('DOMContentLoaded', function() {
+    // Function to fetch and update the table dynamically
+    async function fetchSalesReturns() {
+      const invoice_number = document.getElementById('invoice_number').value.trim();
+      const customer_name = document.getElementById('customer_name').value.trim();
+      const date_from = document.getElementById('date_from').value;
+      const date_to = document.getElementById('date_to').value;
+
+      const url = new URL("{% url 'ajax_search_sales_invoices' %}", window.location.origin);
+      if (invoice_number) url.searchParams.append('invoice_number', invoice_number);
+      if (customer_name) url.searchParams.append('customer_name', customer_name);
+      if (date_from) url.searchParams.append('date_from', date_from);
+      if (date_to) url.searchParams.append('date_to', date_to);
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("خطأ في الاتصال بالسيرفر");
+        const data = await response.json();
+        updateTable(data.results);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        alert("حدث خطأ أثناء جلب النتائج.");
+      }
+    }
+
+    // Function to update the table with results
+    function updateTable(results) {
+      const tbody = document.getElementById('results-tbody');
+      tbody.innerHTML = ""; // Clear current table
+
+      if (results.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="5" class="text-center">لا توجد نتائج مطابقة</td>`;
+        tbody.appendChild(row);
+        return;
+      }
+
+      // Build rows dynamically
+      results.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.invoice_number}</td>
+          <td>${item.customer_name}</td>
+          <td>${item.total_amount} ر.س</td>
+          <td>${item.invoice_date}</td>
+          <td class="text-center">
+            <a href="/sales/${item.id}/edit" class="btn btn-sm btn-warning" title="تعديل الفاتورة">
+              <i class="fas fa-edit"></i> تعديل
+            </a>
+            <a href="/print-view/${item.id}" class="btn btn-sm btn-danger" title="طباعة الفاتورة">
+              <i class="fas fa-print"></i> طباعة
+            </a>
+            <a class="delete-invoice-btn" href="javascript:void(0);" data-invoice-id="${item.id}" data-invoice-number="${item.invoice_number}">
+              <i class="fas fa-trash-alt me-1"></i> حذف
+            </a>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      // Attach delete button event
+      document.querySelectorAll('.delete-invoice-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+          const invoiceId = this.getAttribute('data-invoice-id');
+          const invoiceNumber = this.getAttribute('data-invoice-number');
+          document.getElementById('modalInvoiceNumber').innerText = invoiceNumber;
+
+          const deleteUrl = "{% url 'delete_sales_invoice' 0 %}".replace('0', invoiceId);
+          document.getElementById('deleteInvoiceForm').action = deleteUrl;
+
+          const deleteModal = new bootstrap.Modal(document.getElementById('deleteInvoiceModal'));
+          deleteModal.show();
+        });
+      });
+    }
+
+    // Search button event
+    document.getElementById('btn-search').addEventListener('click', function() {
+      fetchSalesReturns();
     });
+
+    // Reset button event
+    document.getElementById('btn-reset').addEventListener('click', function() {
+      document.getElementById('invoice_number').value = "";
+      document.getElementById('customer_name').value = "";
+      document.getElementById('date_from').value = "";
+      document.getElementById('date_to').value = "";
+      fetchSalesReturns();
+    });
+
+    // Initial fetch when page loads
+    fetchSalesReturns();
   });
 </script>
 {% endblock %}

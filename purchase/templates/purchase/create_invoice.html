@@ -2,6 +2,18 @@
 {% load static %}
 {% block content %}
 
+
+
+
+<Style>
+  .modal-backdrop {
+    display: none !important;
+  }
+  .modal {
+    z-index: 1051 !important;
+  }
+ </Style>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -61,16 +73,18 @@
             <div class="row  mb-3">
 
               <div class="col-md-6">
-                <div class="row mb-3">
-                  <label for="{{ form.supplier.id_for_label }}" class="col-sm-2 col-form-label">المورد</label>
-                  <div class="col-sm-10">
-                    {{ form.supplier }}
-                  </div>
-                </div>
-                
+                <label for="{{ form.supplier.id_for_label }}" class="form-label">العميل</label>
 
-                
-              </div>
+                <div class="input-group">
+                    {{ form.supplier }}
+                    <button type="button" 
+                            class="btn btn-outline-primary" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#supplierModal">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+              </div>   
 
               <div class="col-md-6">
                 <label for="{{ form.invoice_number.id_for_label }}" class="form-label">رقم الفاتورة</label>
@@ -93,16 +107,24 @@
             </div>
 
             <!-- سطر الحقول الثالث -->
+            <!-- السطر الثالث (معدل) -->
             <div class="row g-3 mb-3">
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label for="{{ form.discount_percentage.id_for_label }}" class="form-label">نسبة الخصم (%)</label>
                 {{ form.discount_percentage }}
               </div>
-              <div class="col-md-6">
+
+              <div class="col-md-4">
                 <label for="{{ form.notes.id_for_label }}" class="form-label">الملاحظات</label>
                 {{ form.notes }}
               </div>
+
+              <div class="col-md-4">
+                <label for="{{ form.status.id_for_label }}" class="form-label">حالة الفاتورة</label>
+                {{ form.status }}
+              </div>
             </div>
+
 
             <!-- الحقول المالية المخفية -->
             {{ form.subtotal_before_discount.as_hidden }}
@@ -227,180 +249,345 @@
 
   </form> <!-- نهاية الفورم -->
 
+
+
+
+  <!-- Modal إضافة عميل -->
+<div class="modal fade" id="supplierModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">إضافة عميل جديد</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="supplierForm" method="post" action="{% url 'add_supplier' %}">
+        <div class="modal-body">
+          {% csrf_token %}
+          
+          <!-- الصف الأول -->
+          <div class="row">
+            <!-- العمود الأول للنموذج الأول -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="{{ supplier_form.name.id_for_label }}" class="form-label">اسم المورد</label>
+                {{ supplier_form.name }}
+              </div>
+            </div>
+
+            <!-- العمود الثاني للنموذج الأول -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="{{ supplier_form.phone.id_for_label }}" class="form-label">رقم الهاتف</label>
+                {{ supplier_form.phone }}
+              </div>
+            </div>
+          </div>
+
+          <!-- الصف الثاني -->
+          <div class="row">
+            <!-- العمود الأول للنموذج الثاني -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="{{ supplier_form.email.id_for_label }}" class="form-label">البريد الإلكتروني</label>
+                {{ supplier_form.email }}
+              </div>
+            </div>
+
+            <!-- العمود الثاني للنموذج الثاني -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="{{ supplier_form.address_line.id_for_label }}" class="form-label">العنوان</label>
+                {{ supplier_form.address_line }}
+              </div>
+            </div>
+          </div>
+
+          <!-- الصف الثالث -->
+          <div class="row">
+            <!-- العمود الأول للنموذج الثالث -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="{{ supplier_form.city.id_for_label }}" class="form-label">المدينة</label>
+                {{ supplier_form.city }}
+              </div>
+            </div>
+
+            <!-- العمود الثاني للنموذج الثالث -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="{{ supplier_form.country.id_for_label }}" class="form-label">البلد</label>
+                {{ supplier_form.country }}
+              </div>
+            </div>
+          </div>
+
+          <!-- الصف الرابع -->
+          <div class="row">
+            <!-- العمود الأول للنموذج الرابع -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="{{ supplier_form.vat_number.id_for_label }}" class="form-label">الرقم الضريبي</label>
+                {{ supplier_form.vat_number }}
+              </div>
+            </div>
+
+            <!-- العمود الثاني للنموذج الرابع -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="{{ supplier_form.cr_number.id_for_label }}" class="form-label">رقم السجل التجاري</label>
+                {{ supplier_form.cr_number }}
+              </div>
+            </div>
+          </div>
+
+          <!-- الصف الخامس -->
+          <div class="row">
+            <!-- العمود الأول للنموذج الخامس -->
+            <div class="col-md-12">
+              <div class="mb-3">
+                <label for="{{ supplier_form.notes.id_for_label }}" class="form-label">ملاحظات إضافية</label>
+                {{ supplier_form.notes }}
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ المورد</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
 </div><!-- /container-xxl -->
 
 <!-- سكربت التحديث الفوري لحسابات الفاتورة -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // يتم تمرير البيانات من دالة العرض على شكل JSON
-  const productPrices = {{ product_prices|safe }};
-  const productUnits = {{ product_units|safe }};
-  // conversionUnits: بيانات الوحدات المحولة مثل: {"conv_id": {"abbr": "الوحدة", "factor": "معامل"} , ... }
-  const conversionUnits = {{ conversion_units|safe }};
-
-  // دالة لتحديث سعر الوحدة والوحدة المعروضة في صف العنصر
-  function updateUnitPriceForRow(row) {
-    const productSelect = row.querySelector('select[name$="-product"]');
-    const productId = productSelect ? productSelect.value : null;
-    const basePrice = productPrices[productId] || "0.00";
-    const baseUnitAbbr = productUnits[productId] || "";
-    const unitSelect = row.querySelector('select[name$="-unit"]');
-    let unitPriceValue = parseFloat(basePrice);
-    let displayUnit = baseUnitAbbr;
-
-    // إذا تم اختيار وحدة تحويل في حقل الوحدة، يتم استخدام معامل التحويل
-    if (unitSelect && unitSelect.value) {
-      const convId = unitSelect.value;
-      if (conversionUnits[convId]) {
-        const convData = conversionUnits[convId];
-        unitPriceValue = parseFloat(basePrice) * parseFloat(convData.factor);
-        displayUnit = convData.abbr;
+  document.addEventListener('DOMContentLoaded', function() {
+    // تمرير البيانات من دالة العرض على شكل JSON
+    const productPrices = {{ product_prices|safe }};
+    const productUnits = {{ product_units|safe }};
+    // بيانات الوحدات المحولة مثل: {"conv_id": {"abbr": "الوحدة", "factor": "معامل"} , ... }
+    const conversionUnits = {{ conversion_units|safe }};
+  
+    // دالة لتحديث سعر الوحدة والوحدة المعروضة في صف العنصر (عند تغيير المنتج أو الوحدة)
+    function updateUnitPriceForRow(row) {
+      const productSelect = row.querySelector('select[name$="-product"]');
+      const productId = productSelect ? productSelect.value : null;
+      const basePrice = productPrices[productId] || "0.00";
+      const baseUnitAbbr = productUnits[productId] || "";
+      const unitSelect = row.querySelector('select[name$="-unit"]');
+      let unitPriceValue = parseFloat(basePrice);
+      let displayUnit = baseUnitAbbr;
+  
+      // إذا تم اختيار وحدة تحويل، يتم استخدام معامل التحويل
+      if (unitSelect && unitSelect.value) {
+        const convId = unitSelect.value;
+        if (conversionUnits[convId]) {
+          const convData = conversionUnits[convId];
+          unitPriceValue = parseFloat(basePrice) * parseFloat(convData.factor);
+          displayUnit = convData.abbr;
+        }
+      }
+      // تحديث حقل السعر إذا لم يكن المستخدم يُدخل قيمة (الحقل غير مركز)
+      const unitPriceInput = row.querySelector('input[name$="-unit_price"]');
+      if (unitPriceInput && document.activeElement !== unitPriceInput) {
+        unitPriceInput.value = unitPriceValue.toFixed(2);
       }
     }
-    // تحديث حقل السعر للوحدة
-    const unitPriceInput = row.querySelector('input[name$="-unit_price"]');
-    if (unitPriceInput) {
-      unitPriceInput.value = unitPriceValue.toFixed(2);
+  
+    // دالة لحساب الملخص الإجمالي بدون استدعاء updateUnitPriceForRow (حتى لا نكتب فوق القيمة المُدخلة يدويًا)
+    function updateSummary() {
+      let totalInvoice = 0;
+      document.querySelectorAll('.invoice-item').forEach(function(row) {
+        const priceInput = row.querySelector('input[name$="-unit_price"]');
+        const qtyInput = row.querySelector('input[name$="-quantity"]');
+        const quantity = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+        const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+        const total = quantity * price;
+        row.querySelector('.item-total').textContent = total.toFixed(2) + " ر.س";
+        totalInvoice += total;
+      });
+  
+      const discountInput = document.querySelector('input[name="{{ form.discount_percentage.html_name }}"]');
+      const discountPercentage = discountInput ? parseFloat(discountInput.value) || 0 : 0;
+      const discountValue = totalInvoice * discountPercentage / 100;
+      const netValue = totalInvoice - discountValue;
+      const taxPercentage = parseFloat(document.getElementById('tax-percentage').textContent) || 15;
+      const taxValue = netValue * taxPercentage / 100;
+      const invoiceValue = netValue + taxValue;
+  
+      document.getElementById('total-value').textContent = totalInvoice.toFixed(2) + " ر.س";
+      document.getElementById('discount-percentage').textContent = discountPercentage;
+      document.getElementById('discount-value').textContent = discountValue.toFixed(2) + " ر.س";
+      document.getElementById('net-value').textContent = netValue.toFixed(2) + " ر.س";
+      document.getElementById('tax-percentage').textContent = taxPercentage;
+      document.getElementById('tax-value').textContent = taxValue.toFixed(2) + " ر.س";
+      document.getElementById('invoice-value').textContent = invoiceValue.toFixed(2) + " ر.س";
+  
+      // تحديث الحقول المخفية بالقيم المحسوبة
+      document.querySelector('input[name="{{ form.subtotal_before_discount.html_name }}"]').value = totalInvoice.toFixed(2);
+      document.querySelector('input[name="{{ form.discount.html_name }}"]').value = discountValue.toFixed(2);
+      document.querySelector('input[name="{{ form.subtotal_before_tax.html_name }}"]').value = netValue.toFixed(2);
+      document.querySelector('input[name="{{ form.tax_amount.html_name }}"]').value = taxValue.toFixed(2);
+      document.querySelector('input[name="{{ form.total_amount.html_name }}"]').value = invoiceValue.toFixed(2);
     }
-  }
-
-  function updateSummary() {
-    let totalInvoice = 0;
-    document.querySelectorAll('.invoice-item').forEach(function(row) {
-      updateUnitPriceForRow(row);
-      const priceInput = row.querySelector('input[name$="-unit_price"]');
-
-      const qtyInput = row.querySelector('input[name$="-quantity"]');
-      const quantity = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
-      const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
-      const total = quantity * price;
-      row.querySelector('.item-total').textContent = total.toFixed(2) + " ر.س";
-      totalInvoice += total;
+  
+    // ربط أحداث التغيير على حقول الكمية
+    document.querySelectorAll('input[name$="-quantity"]').forEach(function(input) {
+      input.addEventListener('input', updateSummary);
     });
-
-    const discountInput = document.querySelector('input[name="{{ form.discount_percentage.html_name }}"]');
-    const discountPercentage = discountInput ? parseFloat(discountInput.value) || 0 : 0;
-    const discountValue = totalInvoice * discountPercentage / 100;
-    const netValue = totalInvoice - discountValue;
-    const taxPercentage = parseFloat(document.getElementById('tax-percentage').textContent) || 15;
-    const taxValue = netValue * taxPercentage / 100;
-    const invoiceValue = netValue + taxValue;
-
-    document.getElementById('total-value').textContent = totalInvoice.toFixed(2) + " ر.س";
-    document.getElementById('discount-percentage').textContent = discountPercentage;
-    document.getElementById('discount-value').textContent = discountValue.toFixed(2) + " ر.س";
-    document.getElementById('net-value').textContent = netValue.toFixed(2) + " ر.س";
-    document.getElementById('tax-percentage').textContent = taxPercentage;
-    document.getElementById('tax-value').textContent = taxValue.toFixed(2) + " ر.س";
-    document.getElementById('invoice-value').textContent = invoiceValue.toFixed(2) + " ر.س";
-
-    // تحديث الحقول المخفية بالقيم المحسوبة
-    document.querySelector('input[name="{{ form.subtotal_before_discount.html_name }}"]').value = totalInvoice.toFixed(2);
-    document.querySelector('input[name="{{ form.discount.html_name }}"]').value = discountValue.toFixed(2);
-    document.querySelector('input[name="{{ form.subtotal_before_tax.html_name }}"]').value = netValue.toFixed(2);
-    document.querySelector('input[name="{{ form.tax_amount.html_name }}"]').value = taxValue.toFixed(2);
-    document.querySelector('input[name="{{ form.total_amount.html_name }}"]').value = invoiceValue.toFixed(2);
-  }
-
-  // ربط أحداث التغيير على حقول الكمية والمنتج ووحدة التحويل
-  document.querySelectorAll('input[name$="-quantity"]').forEach(function(input) {
-    input.addEventListener('input', updateSummary);
-  });
-  document.querySelectorAll('select[name$="-product"]').forEach(function(select) {
-    select.addEventListener('change', function() {
-      const row = select.closest('tr');
-      updateUnitPriceForRow(row);
+  
+    // عند تغيير المنتج أو الوحدة، يتم تحديث السعر ثم الحساب
+    document.querySelectorAll('select[name$="-product"]').forEach(function(select) {
+      select.addEventListener('change', function() {
+        const row = select.closest('tr');
+        updateUnitPriceForRow(row);
+        updateSummary();
+      });
+    });
+    document.querySelectorAll('select[name$="-unit"]').forEach(function(select) {
+      select.addEventListener('change', function() {
+        const row = select.closest('tr');
+        updateUnitPriceForRow(row);
+        updateSummary();
+      });
+    });
+  
+    // ربط حدث تعديل السعر يدويًا
+    document.querySelectorAll('input[name$="-unit_price"]').forEach(function(input) {
+      input.addEventListener('input', updateSummary);
+    });
+  
+    // ربط حدث تغيير حقل الخصم
+    const discountInputEl = document.querySelector('input[name="{{ form.discount_percentage.html_name }}"]');
+    if (discountInputEl) {
+      discountInputEl.addEventListener('input', updateSummary);
+    }
+  
+    updateSummary();
+  
+    // دالة حذف صف عنصر الفاتورة
+    window.removeRow = function(button) {
+      const row = button.closest('tr');
+      const deleteInput = row.querySelector('input[name$="-DELETE"]');
+      if (deleteInput) {
+        deleteInput.checked = true;
+        deleteInput.dispatchEvent(new Event('change'));
+      }
+      row.remove();
+      const totalForms = document.getElementById('id_items-TOTAL_FORMS');
+      if (totalForms) {
+        totalForms.value = parseInt(totalForms.value) - 1;
+      }
+      renumberForms();
       updateSummary();
-    });
-  });
-  document.querySelectorAll('select[name$="-unit"]').forEach(function(select) {
-    select.addEventListener('change', function() {
-      const row = select.closest('tr');
-      updateUnitPriceForRow(row);
-      updateSummary();
-    });
-  });
-  const discountInput = document.querySelector('input[name="{{ form.discount_percentage.html_name }}"]');
-  if(discountInput){
-    discountInput.addEventListener('input', updateSummary);
-  }
-  updateSummary();
-
-  // دالة حذف صف عنصر الفاتورة
- // دالة حذف صف عنصر الفاتورة (التعديل النهائي)
-window.removeRow = function(button) {
-  const row = button.closest('tr');
-  const form = document.getElementById('invoiceForm');
+    };
   
-  // 1. تفعيل حقل الحذف في نموذج Django
-  const deleteInput = row.querySelector('input[name$="-DELETE"]');
-  if (deleteInput) {
-      deleteInput.checked = true;
-      deleteInput.dispatchEvent(new Event('change')); // إشعار Django بالتغيير
-  }
-  
-  // 2. إزالة الصف من الواجهة
-  row.remove();
-  
-  // 3. تحديث عدد النماذج في الـ formset
-  const totalForms = document.getElementById('id_items-TOTAL_FORMS');
-  if (totalForms) {
-      totalForms.value = parseInt(totalForms.value) - 1;
-  }
-  
-  // 4. إعادة ترقيم النماذج المتبقية
-  renumberForms();
-  
-  // 5. تحديث الحسابات
-  updateSummary();
-};
-
-// دالة مساعدة لإعادة ترقيم النماذج
-function renumberForms() {
-  document.querySelectorAll('#invoice-items-tbody tr').forEach((row, index) => {
-      // تحديث كل حقل باسم __prefix__
-      row.querySelectorAll('input, select').forEach(element => {
+    // دالة لإعادة ترقيم النماذج
+    function renumberForms() {
+      document.querySelectorAll('#invoice-items-tbody tr').forEach((row, index) => {
+        row.querySelectorAll('input, select').forEach(element => {
           const name = element.name.replace(/items-\d+-/g, `items-${index}-`);
           element.name = name;
+        });
       });
+    }
+  
+    // إضافة صف جديد عند النقر على زر "إضافة منتج"
+    document.getElementById("add-row-button").addEventListener("click", function(e) {
+      e.preventDefault();
+      const tbody = document.getElementById("invoice-items-tbody");
+      const emptyRowHtml = document.getElementById("empty-form-row").innerHTML;
+      const totalFormsInput = document.getElementById("id_items-TOTAL_FORMS");
+      const currentCount = parseInt(totalFormsInput.value);
+      const newRowHtml = emptyRowHtml.replace(/__prefix__/g, currentCount);
+      const newRow = document.createElement("tr");
+      newRow.classList.add("invoice-item");
+      newRow.innerHTML = newRowHtml;
+      tbody.appendChild(newRow);
+      totalFormsInput.value = currentCount + 1;
+  
+      const newProductSelect = newRow.querySelector('select[name$="-product"]');
+      if(newProductSelect) {
+        newProductSelect.addEventListener('change', function() {
+          updateUnitPriceForRow(newRow);
+          updateSummary();
+        });
+      }
+      const newQtyInput = newRow.querySelector('input[name$="-quantity"]');
+      if(newQtyInput) {
+        newQtyInput.addEventListener('input', updateSummary);
+      }
+      const newUnitSelect = newRow.querySelector('select[name$="-unit"]');
+      if(newUnitSelect) {
+        newUnitSelect.addEventListener('change', function() {
+          updateUnitPriceForRow(newRow);
+          updateSummary();
+        });
+      }
+      // ربط حدث تعديل السعر في الصف الجديد
+      newRow.querySelectorAll('input[name$="-unit_price"]').forEach(function(input) {
+        input.addEventListener('input', updateSummary);
+      });
+      updateSummary();
+    });
   });
-}
+  </script>
+  
 
-  // إضافة صف جديد عند النقر على زر "إضافة منتج"
-  document.getElementById("add-row-button").addEventListener("click", function(e) {
-    e.preventDefault();
-    const tbody = document.getElementById("invoice-items-tbody");
-    const emptyRowHtml = document.getElementById("empty-form-row").innerHTML;
-    const totalFormsInput = document.getElementById("id_items-TOTAL_FORMS");
-    const currentCount = parseInt(totalFormsInput.value);
-    const newRowHtml = emptyRowHtml.replace(/__prefix__/g, currentCount);
-    const newRow = document.createElement("tr");
-    newRow.classList.add("invoice-item");
-    newRow.innerHTML = newRowHtml;
-    tbody.appendChild(newRow);
-    totalFormsInput.value = currentCount + 1;
 
-    // ربط الأحداث على الصف الجديد
-    const newProductSelect = newRow.querySelector('select[name$="-product"]');
-    if(newProductSelect) {
-      newProductSelect.addEventListener('change', function() {
-        updateUnitPriceForRow(newRow);
-        updateSummary();
-      });
-    }
-    const newQtyInput = newRow.querySelector('input[name$="-quantity"]');
-    if(newQtyInput) {
-      newQtyInput.addEventListener('input', updateSummary);
-    }
-    const newUnitSelect = newRow.querySelector('select[name$="-unit"]');
-    if(newUnitSelect) {
-      newUnitSelect.addEventListener('change', function() {
-        updateUnitPriceForRow(newRow);
-        updateSummary();
-      });
-    }
-    updateSummary();
+
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // معالجة إرسال نموذج المورد
+      const supplierForm = document.getElementById('supplierForm');
+      if (supplierForm) {
+          supplierForm.addEventListener('submit', function(e) {
+              e.preventDefault();
+              
+              const formData = new FormData(this);
+              
+              fetch("{% url 'add_supplier' %}", {
+                  method: 'POST',
+                  body: formData,
+                  headers: {
+                      'X-Requested-With': 'XMLHttpRequest'
+                  }
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      // إضافة المورد الجديد للقائمة المنسدلة
+                      const supplierSelect = document.getElementById('{{ form.supplier.id_for_label }}');
+                      const newOption = new Option(data.supplier_name, data.supplier_id);
+                      supplierSelect.appendChild(newOption);
+                      supplierSelect.value = data.supplier_id;
+                      
+                      // إغلاق المودال بالطريقة الصحيحة
+                      const modal = bootstrap.Modal.getOrCreateInstance(
+                        document.getElementById('supplierModal')
+                      );
+                      modal.hide();
+                      
+                      // تنظيف النموذج
+                      this.reset();
+
+                      // تحديث قايمة العملاء
+                      
+                  } else {
+                      alert('خطأ: ' + data.errors);
+                  }
+              })
+              .catch(error => console.error('Error:', error));
+          });
+      }
   });
-});
-</script>
+  </script>
 {% endblock %}

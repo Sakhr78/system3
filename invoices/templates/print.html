@@ -2,404 +2,494 @@
 {% block content %}
 
 <style>
-    /* تحسين التنسيق العام */
+    /* ========== أنماط الشاشة (Screen Styles) ========== */
+
+    /* إعدادات الجسم العامة */
     body {
-        margin: 0;
-        padding: 0;
-        font-family: Arial, sans-serif;
-        background-color: #f9f9f9;
+        /* هذه الأنماط تؤثر على العرض العادي في المتصفح */
+        /* يمكنك إبقائها كما هي أو تعديلها حسب تصميم موقعك العام */
+        font-family: 'Helvetica Neue', Arial, sans-serif; /* استخدام خط نظيف */
         direction: rtl;
         text-align: right;
+        background-color: #f9f9f9; /* لون خلفية خفيف للعرض */
     }
 
-    /* تغليف الفاتورة */
+    /* تغليف الفاتورة (للتوسيط والعرض على الشاشة) */
     .invoice-wrapper {
         display: flex;
         justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        padding: 20px;
+        padding: 30px 15px; /* هوامش حول الفاتورة على الشاشة */
+        /* background-color: #e9e9e9; */ /* لإظهار حدود الحاوية */
     }
 
+    /* حاوية الفاتورة الرئيسية (الشكل على الشاشة) */
     .invoice-container {
-        width: 850px;
+        width: 850px; /* عرض مقارب لـ A4 على الشاشات الكبيرة */
+        max-width: 100%; /* لضمان الاستجابة للشاشات الأصغر */
         background-color: #fff;
-        padding: 7px 20px;
-        border: 1px solid #ccc;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        padding: 30px 40px; /* هوامش داخلية جيدة */
+        border: 1px solid #ddd;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin: 0 auto; /* للتوسيط إذا لزم الأمر */
+        font-size: 14px; /* حجم خط أساسي مناسب */
+        line-height: 1.6;
     }
 
-    /* تحسين الجدول */
+    /* إعدادات الجدول الأساسية */
     .table {
         width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
+        border-collapse: collapse; /* لإزالة المسافات بين حدود الخلايا */
+        margin-bottom: 15px !important; /* مسافة أسفل الجداول */
     }
 
-    .table, th, .td {
-
+    /* خلايا الجدول (بيانات وعناوين) */
+    .table th, .table td {
+        border: 1px solid #dee2e6; /* حدود خفيفة */
+        padding: 8px 12px;       /* هوامش داخلية مريحة */
+        text-align: right;       /* محاذاة للنص */
+        vertical-align: top;    /* محاذاة للأعلى (جيد للنصوص الطويلة) */
     }
 
-    .td {
-        text-align: right;
-        padding: 8px !important;
-                border: 1px solid #ddd;
-
+    .table th { /* تنسيق خاص لرأس الجدول */
+        background-color: #f8f9fa; /* لون خلفية خفيف للرأس */
+        font-weight: 600;         /* خط أثقل */
+        font-size: 15px;
+        border-bottom-width: 2px; /* خط أسمك أسفل الرأس */
+        color: #0026ff;
     }
-    
-     .tdd{
-        padding: 6px !important;
-                border: 1px solid #ddd;
-
+    .table .td { /* يمكن استخدامه لخلايا بيانات محددة إذا لزم الأمر */
+         font-size: 14px;
     }
-    th, .th td {
-        border-bottom: 2px solid #333 !important;
-
-        border: 2px solid #333;
-
+    .table .th td { /* يستخدم إذا كان صف الرأس يستخدم td بدلاً من th */
+         font-weight: 600;
+         font-size: 15px;
+         color: #0026ff;
+    }
+    /* إزالة الحشو الزائد من خلايا الملخص */
+    .small-summary-table td, .small-summary-table th {
+        padding: 4px 8px 4px 8px !important;
+        font-size: 12px;
     }
 
-    /* زر الطباعة */
-    .print-button {
-        display: block;
-        margin: 15px auto;
-        padding: 10px 20px;
+    /* تنسيق Header الفاتورة */
+    .invoice-header-section {
+        text-align: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 3px double #333; /* خط مزدوج للفصل */
+    }
+    .invoice-header-section h2 {
+        margin-bottom: 5px;
+        font-size: 20px;
+        font-weight: bold;
+    }
+    .invoice-header-section .header-details p {
+        margin: 2px 8px; /* تقليل الهوامش بين بيانات الشركة */
+        display: inline-block; /* جعلها في سطر واحد قدر الإمكان */
+        font-size: 13px;
+    }
+
+    /* عنوان الفاتورة */
+    .invoice-title-section {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    /* تم إضافة الكلاس no-print-mobile لإخفاء العنوان في الطباعة على الهاتف */
+    .invoice-title-section .main-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #0026ff;
+        margin-bottom: 8px;
+    }
+    .invoice-title-section .subtitle-box {
+        display: inline-block;
+        border: 2px solid #0026ff;
+        padding: 5px 15px;
         font-size: 16px;
-        background-color: #007bff;
+        font-weight: bold;
+        color: #0026ff;
+        border-radius: 8px;
+    }
+
+    /* زر الطباعة (للشاشة فقط) */
+    .print-button {
+        display: block; /* يجعله يأخذ السطر كاملاً افتراضياً */
+        margin: 20px auto; /* للتوسيط */
+        padding: 10px 25px;
+        font-size: 16px;
+        background-color: #0d6efd; /* أزرق Bootstrap */
         color: white;
         border: none;
-        cursor: pointer;
-        transition: 0.3s;
         border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
     }
-
     .print-button:hover {
-        background-color: #0056b3;
+        background-color: #0b5ed7;
     }
 
-    /* تنسيقات الطباعة */
-    @media print {
-        /* إخفاء جميع أجزاء النظام */
-        body * {
-            visibility: hidden;
-        }
-
-        /* عرض الفاتورة فقط */
-        .invoice-wrapper, .invoice-wrapper * {
-            visibility: visible;
-        }
-
-        .invoice-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            border: none;
-            box-shadow: none;
-            padding: 0;
-        }
-
-        /* إخفاء زر الطباعة عند الطباعة */
-        .print-button {
-            display: none;
-        }
+    /* حاوية زر تعديل الفاتورة في اعلى الصفحة (لا تطبع) */
+    .invoice-actions-header {
+       /* أنماط للشاشة فقط إذا لزم الأمر */
     }
 
+    /* تنسيقات التذييل (الشاشة والطباعة) */
+    .invoice-footer {
+        margin-top: 30px; /* مسافة فوق التذييل */
+        padding-top: 15px;
+        border-top: 3px double #333; /* خط مزدوج للفصل */
+    }
+    .invoice-footer table {
+        width: 100%;
+    }
+    .footer-cell {
+        width: 33.33%;
+        text-align: center; /* توسيط المحتوى داخل كل خلية */
+        vertical-align: top;
+        padding: 5px 10px;
+    }
+    .footer-cell .line-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center; /* توسيط محتويات التوقيع */
+        width: 85%; /* تحديد عرض نسبي */
+        margin: 8px auto; /* هوامش أوتوماتيكية للتوسيط */
+    }
+    .footer-cell .label, .footer-cell .sub-label {
+        white-space: nowrap; /* منع التفاف كلمة البائع/التوقيع */
+        margin: 0 5px; /* هوامش حول النص */
+        font-size: 13px;
+        font-weight: 500;
+    }
+    .footer-cell .line {
+        flex-grow: 1; /* جعل الخط يملأ المساحة المتبقية */
+        border-bottom: 1px dashed #555;
+        height: 1px;
+    }
+    .invoice-footer .qr img {
+        max-width: 120px; /* حجم معقول للـ QR */
+        height: auto;
+        margin: 0 auto; /* للتوسيط */
+        display: block;
+    }
 
-    
-    /* ===== إعدادات الطباعة (A4 عمودي) ===== */
+    /* ========== أنماط الطباعة (@media print) ========== */
     @media print {
-        .invoice-container {
-          width: 100% !important;
-          border: none !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          box-shadow: none !important;
-          page-break-inside: avoid;
-          overflow: visible !important;
-        }
-        html, body {
-          width: 100%;
-          height: auto;
-          margin: 0;
-          padding: 0;
-        }
+
+        /* ----- إعدادات الصفحة العامة للطباعة ----- */
         @page {
-          size: A4 portrait;
-          margin: 10mm;
+            size: A4 portrait;  /* حجم الورق واتجاهه */
+            margin: 15mm;       /* هوامش الطباعة (مثال: 1.5 سم من كل جهة) */
         }
-      }
 
+        html, body {
+            width: 100%;         /* استخدام عرض منطقة الطباعة */
+            height: auto;
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #fff !important; /* خلفية بيضاء دائما */
+            font-size: 10pt;     /* حجم خط مناسب للطباعة (قد تحتاج لتعديله) */
+            color: #000 !important; /* نص أسود دائما */
+            -webkit-print-color-adjust: exact; /* محاولة فرض الألوان (مفيد للحدود والشعارات) */
+            print-color-adjust: exact;
+        }
 
+        /* ----- إخفاء العناصر غير المرغوبة ----- */
+        /* إخفاء الشريط العلوي، والأزرار، والتذييل العام، وأي عنصر لديه كلاس no-print */
+        header, nav, aside, footer:not(.invoice-footer), .no-print, .print-button, .invoice-actions-header,
+        .navbar, .card-header, .breadcrumb {
+            display: none !important;
+        }
 
-      .header {  
-        display: flex; /* استخدام فليكس لتنسيق العناصر في نفس السطر */  
-        flex-direction: row; /* عرض العناصر في صف */  
-        justify-content: center; /* محاذاة العناصر في الوسط أفقياً */  
-        align-items: center; /* محاذاة العناصر في الوسط عموديًا */  
-        font-weight: bold;  
-        line-height: 1.5;  
-    }  
-    
-    .header p {  
-        margin: 0 4px; /* إضافة مسافة بين الفقرات */  
+        /* ----- التركيز على محتوى الفاتورة ----- */
+        .invoice-wrapper {
+             display: block; /* إلغاء flex */
+             padding: 0 !important; /* إزالة أي حشو خارجي */
+             margin: 0 !important;
+        }
+
+        .invoice-container {
+            width: 100% !important;     /* تملأ منطقة الطباعة */
+            max-width: 100% !important;
+            border: none !important;      /* إزالة حدود الشاشة */
+            box-shadow: none !important; /* إزالة ظلال الشاشة */
+            padding: 0 !important;       /* إزالة الحشو الداخلي */
+            margin: 0 !important;
+            page-break-inside: avoid;
+            position: static !important;
+            visibility: visible !important;
+        }
+
+        /* ضمان ظهور جميع العناصر داخل الفاتورة */
+        .invoice-container * {
+             visibility: visible !important;
+        }
+
+         /* ----- تحسين الجداول للطباعة ----- */
+        .table {
+            margin-bottom: 10px !important;
+        }
+        .table th, .table td {
+            padding: 5px 8px !important;
+            font-size: 9pt;
+            border: 1px solid #ccc !important;
+        }
+         .table th {
+             background-color: #eee !important;
+             color: #000 !important;
+             -webkit-print-color-adjust: exact;
+             print-color-adjust: exact;
+         }
+
+        /* ----- التحكم في فواصل الصفحات ----- */
+        table, tr, img, .invoice-footer, .small-summary-table {
+            page-break-inside: avoid !important;
+        }
+         .table thead {
+            display: table-header-group !important;
+         }
+         .invoice-footer {
+             page-break-before: auto !important;
+         }
+
+         /* ----- تنسيقات أخرى للطباعة ----- */
+         a {
+             color: inherit !important;
+             text-decoration: none !important;
+         }
+         .logo-img {
+            max-height: 40px !important;
+            width: auto;
+         }
+         .invoice-footer .qr img {
+            max-width: 90px !important;
+         }
+         
+         /* ===== إخفاء التاريخ وعنوان الفاتورة على الهاتف ===== */
+         @media print and (max-width: 768px) {
+             .no-print-mobile {
+                 display: block !important;
+             }
+         }
+         .small-summary-table table,
+    .small-summary-table table td {
+        border: 1px solid #ccc !important; /* يمكنك استخدام #ccc أو #bbb أو #ddd حسب الرغبة */
+    }
+
     }
 </style>
 
+<!-- ======================= محتوى HTML (لا حاجة لتغييرات كبيرة هنا) ======================= -->
+
 <div class="container-xxl flex-grow-1 container-p-y">
 
-
-    <div class="row">
+    <!-- هذا الجزء لن يطبع بسبب الكلاس no-print -->
+    <div class="row no-print">
         <div class="col-12">
-        <div class="card shadow-sm mb-4">
-           
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center invoice-actions-header">
+                    <h4 class="mb-0">{{ title|default:"تفاصيل الفاتورة" }}</h4>
+                    <div>
+                        {% if invoice.invoice_type == 'sales' %}
+                            <a href="{% url 'edit_sales_invoice' invoice.id %}" class="btn btn-warning me-2 btn-sm">
+                                <i class="fas fa-edit me-1"></i> تعديل مبيعات
+                            </a>
+                        {% elif invoice.invoice_type == 'purchase' %}
+                            <a href="{% url 'edit_purchase_invoice' invoice.id %}" class="btn btn-info me-2 btn-sm">
+                                <i class="fas fa-edit me-1"></i> تعديل مشتريات
+                            </a>
+                        {% elif invoice.invoice_type == 'sales_return' %}
+                            <a href="{% url 'update_sales_return_invoice' invoice.id %}" class="btn btn-success me-2 btn-sm">
+                                <i class="fas fa-edit me-1"></i> تعديل ائتمانات
+                            </a>
+                        {% else %}
+                        {% endif %}
 
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">{{ title }}</h4>
-                <i class="fas fa-file-invoice-dollar me-2"></i> تفاصيل الفاتورة: {{ invoice.invoice_number }}
-
-                <div>
-
-                {% if invoice.invoice_type == 'sales' %}  
-                    <a href="{% url 'edit_sales_invoice' invoice.id %}" class="btn btn-warning me-2">  
-                        <i class="fas fa-edit me-1"></i> تعديل مبيعات  
-                    </a>  
-                {% elif invoice.invoice_type == 'purchase' %}  
-                    <a href="{% url 'edit_purchase_invoice' invoice.id %}" class="btn btn-info me-2">  
-                        <i class="fas fa-edit me-1"></i> تعديل مشتريات  
-                    </a>  
-                {% elif invoice.invoice_type == 'sales_return' %}  
-                    <a href="{% url 'update_sales_return_invoice' invoice.id %}" class="btn btn-success me-2">  
-                        <i class="fas fa-edit me-1"></i> تعديل ائتمانات  
-                    </a>  
-                {% else %}  
-                    <a href="" class="btn btn-secondary me-2">  
-                        <i class="fas fa-edit me-1"></i> تعديل أخرى  
-                    </a>  
-                
-                {% endif %}
-
-                
-                  <!-- زر للطباعة (يمكن ربطه بصفحة طباعة أو استخدام جافاسكريبت window.print()) -->
-                  <button type="button" class="btn btn-primary" onclick="window.print();">
-                    <span class="tf-icons bx bx-printer"></span>&nbsp; طباعة الفاتورة             
-                     </button>
+                        <!-- زر الطباعة -->
+                        <button type="button" class="btn btn-primary btn-sm print-button" onclick="printInvoice();">
+                           <i class="fas fa-print me-1"></i> طباعة الفاتورة
+                        </button>
+                    </div>
                 </div>
-              </div>
-        </div>
+            </div>
         </div>
     </div>
 
-
-      
-    <!-- زر طباعة الفاتورة -->
-
-    <!-- حاوية الفاتورة -->
-    <div class="invoice-wrapper" dir="">
+    <!-- حاوية الفاتورة التي ستطبع -->
+    <div class="invoice-wrapper" dir="rtl">
         <div class="invoice-container">
-            <hr style="border: 1px solid black; margin: .1rem 0 !important;">
-            <hr style="border: 1px solid black; margin: .1rem 0 !important;">
 
             <!-- الجزء العلوي (بيانات الشركة) -->
-            <div style="text-align: center; margin-bottom: 10px; margin-top : 10px; ">
-                <h2 style="font-weight: bold; font-size: 22p;">  {{ invoice.company.name }}</h2>
-                    <div  class="header">  
-                        <p>   {{ invoice.company.address }} </p>
-                        <p>س ت: {{ invoice.company.fax }}  </p>  
-  
-                        <p>هاتف: {{ invoice.company.phone }}  </p>  
+            <div class="invoice-header-section">
+                {% if invoice.company.name %}
+                    <h2 style='color: #0026ff;'>{{ invoice.company.name }}</h2>
 
-                        <p>        الرقم الضريبي: {{ invoice.company.vat_number }}</p>
+                {% endif %}
+                <div class="header-details">
+                    {% if invoice.company.address %}
+                        <p >{{ invoice.company.address }}</p>
+                    {% endif %}
+                    {% if invoice.company.fax %}
+                        <p>س ت: {{ invoice.company.fax }}</p>
+                    {% endif %}
+                    {% if invoice.company.phone %}
+                        <p>هاتف: {{ invoice.company.phone }}</p>
+                    {% endif %}
+                                        {% if invoice.company.cr_number %}   <p>        رقم السجل التجاري : {{ invoice.company.cr_number }}</p>{% endif %}
 
-                    </div>  
-            </div>
-            <hr style="border: 1px solid black; margin: .1rem 0 !important;">
-            <hr style="border: 1px solid black; margin: .1rem 0 !important;">
-
-            <!-- عنوان الفاتورة -->
-            <div style="text-align: center; margin-bottom: 15px;">
-                <p style="font-size: 22px; font-weight: bold; letter-spacing: 1px; color: #0026ff;">فاتورة ضريبية</p>
-            
-                <div style="
-                    display: inline-block;
-                    border: 2px solid #0026ff;
-                    padding: 5px 15px;
-                    font-size: 18px;
-                    font-weight: bold;
-                    color: #0026ff;
-                    border-radius: 8px;">
-                    فاتورة: <span style="font-weight: bold;"> {{ invoice.get_invoice_type_display }} {{ invoice.payment_method }}</span>
+                    {% if invoice.company.vat_number %}
+                        <p>الرقم الضريبي: {{ invoice.company.vat_number }}</p>
+                    {% endif %}
                 </div>
             </div>
-            
+
+            <!-- عنوان الفاتورة -->
+            <div class="invoice-title-section">
+                <!-- إضافة الكلاس no-print-mobile لإخفاء عنوان الفاتورة عند الطباعة على الهاتف -->
+                <p class="main-title no-print-mobile">فاتورة ضريبية</p>
+                <div class="subtitle-box">
+                    {{ invoice.get_invoice_type_display }} {% if invoice.payment_method %}({{ invoice.payment_method }}){% endif %}
+                </div>
+            </div>
 
             <!-- معلومات العميل والفاتورة -->
-            <table class="table" >
-                
-                <tr style="text-align: right;" class="th">
-                    <td class="td"><strong>رقم العميل:</strong> 4104</td>
-                    <td class="td"><strong>الرقم الضريبي للعميل:</strong> {{ invoice.customer.vat_number }}</td>
-                </tr>
-                                    <tr style="height:10px;"></tr>
-
-                <tr class="th">
-                    <td class="td"><strong>اسم العميل:</strong> {{ invoice.customer.name }}</td>
-                    <td class="td"><strong>رقم الفاتورة:</strong> {{ invoice.invoice_number }}</td>
-                </tr class="th">
-                                    <tr style="height:10px;"></tr>
-
-                <tr class="th">
-                    <td class="td"><strong>عنوان العميل:</strong></td>
-                    <td class="td"><strong>التاريخ:</strong> {{ invoice.invoice_date|date:"d/m/Y" }}</td>
-                </tr>
+            <table class="table" style="margin-bottom: 20px !important;">
+                <tbody>
+                    <tr>
+                        <td class="td" style="width: 50%;"><strong>رقم العميل:</strong> {{ invoice.customer.customer_id|default:"458" }}</td>
+                        <td class="td" style="width: 50%;"><strong>اسم العميل:</strong> {{ invoice.customer.name|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="td"><strong>الرقم الضريبي للعميل:</strong> {{ invoice.customer.vat_number|default:"-" }}</td>
+                        <td class="td"><strong>رقم الفاتورة:</strong> {{ invoice.invoice_number }}</td>
+                    </tr>
+                    <tr>
+                        <td class="td"><strong>عنوان العميل:</strong> {{ invoice.customer.address_line|default:"-" }}</td>
+                        <!-- إضافة الكلاس no-print-mobile لإخفاء تاريخ الفاتورة عند الطباعة على الهاتف -->
+                        <td class="td no-print-mobile"><strong>تاريخ الفاتورة:</strong> {{ invoice.invoice_date|date:"Y-m-d" }}</td>
+                    </tr>
+                </tbody>
             </table>
-
-            
 
             <!-- جدول البنود -->
             <table class="table">
                 <thead>
-                    <tr >
-                        <th style='font-size: 16px;
-                        font-weight: bold;
-                        letter-spacing: 1px;
-                        color: #0026ff;'>م</th>
-                        <th style='font-size: 16px;
-                        font-weight: bold;
-                        letter-spacing: 1px;
-                        color: #0026ff;'>رقم الصنف</th>
-                        <th style='font-size: 16px;
-                        font-weight: bold;
-                        letter-spacing: 1px;
-                        color: #0026ff;'>الوصف</th>
-                        <th style='font-size: 16px;
-                        font-weight: bold;
-                        letter-spacing: 1px;
-                        color: #0026ff;'>الكمية</th>
-                        <th style='font-size: 16px;
-                        font-weight: bold;
-                        letter-spacing: 1px;
-                        color: #0026ff;'>السعر</th>
-                        <th style='font-size: 16px;
-                        font-weight: bold;
-                        letter-spacing: 1px;
-                        color: #0026ff;'>الإجمالي</th>
+                    <tr>
+                        <th style="width: 5%;">م</th>
+                        <th style="width: 15%;">رقم الصنف</th>
+                        <th>الوصف</th>
+                        <th style="width: 10%;">الكمية</th>
+                        <th style="width: 15%;">السعر</th>
+                        <th style="width: 15%;">الإجمالي</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in invoice.invoice_items.all %}
-                    
                     <tr>
                         <td class="td">{{ forloop.counter }}</td>
-                        <td class="td">{{ item.product.serial_number }}</td>
-                        <td class="td">{{ item.product.name_ar }}</td>
-                        <td class="td">{{ item.quantity|floatformat:0 }}</td>
-                        <td class="td">{{ item.unit_price|floatformat:2 }}</td>
-                        <td class="td">{{ item.total|floatformat:2 }}</td>
+                        <td class="td">{{ item.product.serial_number|default:"-" }}</td>
+                        <td class="td" style="text-align: right;">{{ item.product.name_ar|default:"-" }}</td>
+                        <td class="td" style="text-align: center;">{{ item.quantity|floatformat:"0g" }}</td>
+                        <td class="td" style="text-align: left;">{{ item.unit_price|floatformat:2 }}</td>
+                        <td class="td" style="text-align: left;">{{ item.total|floatformat:2 }}</td>
                     </tr>
-                    <tr style="height:10px;"></tr>
-
+                    {% empty %}
+                    <tr>
+                        <td class="td" colspan="6" style="text-align: center;">لا توجد بنود في هذه الفاتورة.</td>
+                    </tr>
                     {% endfor %}
-
                 </tbody>
             </table>
 
-       <!-- الملخص المالي -->
-        <table style="width: 100%; border-collapse: collapse; text-align: right;" class="table">
-            <tr>
-                <td class="tdd" style="width: 30%; font-weight: bold;">الإجمالي</td>
-                <td class="tdd" style="width: 70%; text-align: right;">
-                    {{ invoice.subtotal_before_discount|floatformat:2 }}  
-                     <span style="color: #555; margin-right: 20px;">{{ subtotal_words }}</span>
-                </td>
-            </tr>
+            <!-- الملخص المالي (يأتي بعد جدول البنود مباشرة) -->
+            <div style="clear: both;"></div>
+            <div class="small-summary-table" style="float: left; width: 230px; margin-top: 15px;">
+                 <table style="border: 1px solid #ddd;">
+                     <tr>
+                         <td style="width: 60%;">الإجمالي قبل الخصم</td>
+                         <td style="width: 40%; text-align: left;">
+                            {{ invoice.subtotal_before_discount|floatformat:2 }}
+                         </td>
+                     </tr>
+                     <tr>
+                         <td>الخصم</td>
+                         <td style="text-align: left;">
+                            {{ invoice.discount|floatformat:2 }}
+                         </td>
+                     </tr>
+                     <tr>
+                         <td>الإجمالي بعد الخصم</td>
+                         <td style="text-align: left;">
+                            {{ invoice.subtotal_before_tax|floatformat:2 }}
+                         </td>
+                     </tr>
+                     <tr>
+                         <td>ضريبة القيمة المضافة (15%)</td>
+                         <td style="text-align: left;">
+                             {{ invoice.tax_amount|floatformat:2 }}
+                         </td>
+                     </tr>
+                     <tr style="font-weight: bold; background-color: #f8f9fa;">
+                         <td>المبلغ المستحق</td>
+                         <td style="text-align: left;">
+                            {{ invoice.total_amount|floatformat:2 }}
+                         </td>
+                     </tr>
+                 </table>
+                 <!-- التفقيط -->
+                  <div style="padding: 8px 12px; font-size: 13px; border-top: 1px solid #ddd;">
+                      <strong>فقط:</strong> {{ total_words|default:"" }}
+                  </div>
+            </div>
+            <div style="clear: both;"></div>
 
-            <tr>
-                <td class="tdd" style="font-weight: bold;">الخصم</td>
-                <td class="tdd" style="text-align: right; margin-right: 20px;">
-                    {{ invoice.discount|floatformat:2 }}   
-                    {% if invoice.discount != 0 %}
-                    <span style="color: #555; margin-right: 20px;">{{ discount_words }}</span>
-                    {% endif %}
-                </td>
-            </tr>
+            <!-- قسم التذييل (Footer) -->
+            <div class="invoice-footer">
+                <table>
+                    <tbody>
+                        <tr>
+                            <!-- العمود الأيمن (البائع) -->
+                            <td class="footer-cell">
+                                <div class="line-wrapper"><span class="label">البائع:</span><span class="line"></span></div>
+                                <div class="line-wrapper"><span class="sub-label">التوقيع:</span><span class="line"></span></div>
+                            </td>
 
-            <tr>
-                <td class="tdd" style="font-weight: bold;">الإجمالي بعد الخصم</td>
-                <td class="tdd" style="text-align: right;">
-                    {{ invoice.subtotal_before_tax|floatformat:2 }}  
-                     <span style="color: #555; margin-right: 20px;">{{ subtotal_after_discount_words }}</span>
-                </td>
-            </tr>
+                            <!-- العمود الأوسط (QR Code) -->
+                            <td class="footer-cell qr">
+                                {% if invoice.qr_code %}
+                                    <img src="{{ invoice.qr_code.url }}" alt="QR Code">
+                                {% else %}
+                                     
+                                {% endif %}
+                            
+                            <!-- QR Code -->
+    <div>
+      <h5>QR Code:</h5>
+      <img src="{{ qr_code_url }}" alt="QR Code للفاتورة {{ invoice.invoice_number }}">
+    </div>
+    <!-- Barcode -->
+    <div style="margin-top: 8px;">
+      <h5>Barcode:</h5>
+      <img src="{{ barcode_url }}" alt="Barcode للفاتورة {{ invoice.invoice_number }}">
+    </div>
+                            </td>
 
-            <tr>
-                <td class="tdd" style="font-weight: bold;">ضريبة القيمة المضافة (15%)</td>
-                <td class="tdd" style="text-align: right;">
-                    {{ invoice.tax_amount|floatformat:2 }}  
-                     <span style="color: #555; margin-right: 20px;">{{ tax_words }}</span>
-                </td>
-            </tr>
-
-            <tr>
-                <td class="tdd" style="font-weight: bold;">المستحق</td>
-                <td class="tdd" style="text-align: right; ">
-                    {{ invoice.total_amount|floatformat:2 }}  
-                     <span style="color: #555; margin-right: 20px;">{{ total_words }}</span>
-                </td>
-            </tr>
-        </table>
-
-
-            <!-- القسم السفلي -->
-        
-
-            <!-- القسم السفلي -->
-            <div style="margin-top: 20px; border:none !important; padding-top: 10px;">
-                <table style="width: 100%; border-collapse: collapse; text-align: center;">
-                    <tr>
-                        <!-- العمود الأيمن (البائع) -->
-                        <td style="width: 30%; text-align: right; font-size: 16px; color: #0026ff; font-weight: bold;">
-                           <div>
-                            <span>البائع:</span>
-                            <span style="display: inline-block; width: 75%; border-bottom: 1px dashed #000; margin-right: 10px;"></span>
-                        </div>
-
-                            <div style="margin-top: 20px; display: block;">
-                                    <span >:التوقيع</span> <!-- يمكنك تعديل الرقم حسب الرغبة -->  
-                                    <span style="display: inline-block; width: 75%; border-bottom: 1px dashed #000; margin-right: 10px; margin-top: 10px;"></span>  
-                                </div>
-                        </td>
-                        {% if invoice.qr_code %}
-
-                        <!-- العمود الأوسط (QR Code) -->
-                        <td style="width: 40%; text-align: center;">
-                            <img src="{{ invoice.qr_code.url }}" alt="QR Code" style="max-width: 150px;">
-                        </td>
-                        {% endif%}
-                        <!-- العمود الأيسر (المستلم) -->
-                        <td style="width: 30%; text-align: left; font-size: 16px; color: #0026ff; font-weight: bold;">
-                            <div>  
-                            <span>:البائع</span>
-                                <span style="display: inline-block; width: 75%; border-bottom: 1px dashed #000; margin-right: 10px; margin-top: 10px;"></span>  
-                              </div>
-                              <div style="margin-top: 20px; display: block;">
-                                <span >:التوقيع</span> <!-- يمكنك تعديل الرقم حسب الرغبة -->  
-                                <span style="display: inline-block; width: 75%; border-bottom: 1px dashed #000; margin-right: 10px; margin-top: 10px;"></span>  
-                                </div>
-                        
-                        
-                        </td>
-                    </tr>
+                            <!-- العمود الأيسر (المستلم) -->
+                            <td class="footer-cell">
+                                <div class="line-wrapper"><span class="label">المستلم:</span><span class="line"></span></div>
+                                <div class="line-wrapper"><span class="sub-label">التوقيع:</span><span class="line"></span></div>
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
 
+        </div><!-- نهاية .invoice-container -->
+    </div><!-- نهاية .invoice-wrapper -->
 
-        </div>
-    </div>
+</div><!-- نهاية .container-xxl -->
 
-</div>
-
-<!-- سكربت الطباعة -->
+<!-- سكربت الطباعة البسيط -->
 <script>
     function printInvoice() {
         window.print();

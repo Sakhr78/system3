@@ -181,11 +181,30 @@
           <!-- Content wrapper -->
           <div class="content-wrapper">
             <!-- Content -->
+            <div class="container-xxl flex-grow-1 container-p-y">
+              <!-- الجزء العلوي: بطاقة ترحيبية وإحصائيات -->
+              <div class="row">
+                        {% if messages %}
+                          <div class="alert-container">
+                              {% for message in messages %}
+                                  <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+                                      {{ message }}
+                                      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+
+                                  </div>
+                              {% endfor %}
+                          </div>
+                      {% endif %}
+
+                   
+
 
             {% block content %}
 
             
             {% endblock %}
+  </div>
+</div>
 
             <!-- / Content -->
 

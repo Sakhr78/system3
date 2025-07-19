@@ -17,9 +17,9 @@
             <table class="table table-striped" id="productTable">
                 <thead>
                     <tr>
-                        <th>الاسم بالعربي</th>
+                        <th>الاسم </th>
                         <th>الرقم التسلسل </th>
-                        <th>الصنف</th>
+                        <th>المجموعة</th>
                         <th>الوحدة</th>
                         <th>السعر</th>
                         <th>الوصف</th>
@@ -62,7 +62,7 @@
 
 <!-- Modal لإضافة/تعديل المنتج -->
 <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl" role="document">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
         <form id="productForm">
             {% csrf_token %}
@@ -75,51 +75,62 @@
                 <input type="hidden" name="edit_id" id="editIdInput" value="">
 
                
-                    <div class="row g-2">
-                        <div class="col mb-0">
-                          <label for="id_name_ar" class="form-label">الاسم بالعربي</label>
-                          <input type="text" class="form-control" name="name_ar" id="id_name_ar">
-                          <div class="text-danger small" id="err_name_ar"></div>
-                        </div>
-                        <div class="col mb-0">
-                            <label for="id_serial_number" class="form-label">الرقم التسلسل </label>
-                            <input type="text" class="form-control" name="serial_number" id="id_serial_number">
-                            <div class="text-danger small" id="err_serial_number"></div>
-                        </div>
+                <div class="row g-2">
+                    <div class="col mb-0">
+                        <label for="id_name_ar" class="form-label">الاسم بالعربي</label>
+                        <input type="text" class="form-control" name="name_ar" id="id_name_ar">
+                        <div class="text-danger small" id="err_name_ar"></div>
                     </div>
-                    <div class="mb-3">
-                        <label for="id_category" class="form-label">الصنف</label>
-                        {{ form.category }} {# عرض حقل category من النموذج #}
-                        <div class="text-danger small" id="err_category"></div>
+                    <div class="col mb-0">
+                        <label for="id_serial_number" class="form-label">الرقم التسلسل </label>
+                        <input type="text" class="form-control" name="serial_number" id="id_serial_number">
+                        <div class="text-danger small" id="err_serial_number"></div>
                     </div>
-                    <div class="mb-3">
+                </div>
+                <div class="row g-2">
+                    <div class="col mb-0">
+                        <label for="id_category" class="form-label">المجموعة</label>
+                    {{ form.category }} {# عرض حقل category من النموذج #}
+                    <div class="text-danger small" id="err_category"></div>
+                        <div class="text-danger small" id="err_name_ar"></div>
+                    </div>
+                    <div class="col mb-0">
                         <label for="id_unit" class="form-label">الوحدة</label>
-                        {{ form.unit }} {# عرض حقل unit من النموذج #}
-                        <div class="text-danger small" id="err_unit"></div>
+                    {{ form.unit }} {# عرض حقل unit من النموذج #}
+                    <div class="text-danger small" id="err_unit"></div>
+                        <div class="text-danger small" id="err_serial_number"></div>
                     </div>
-                    <div class="mb-3">
+                </div>
+                
+                <div class="row g-2">
+
+                    <div class="col mb-3">
                         <label for="id_price" class="form-label">السعر</label>
                         <input type="number" class="form-control" name="price" id="id_price" step="0.01">
                         <div class="text-danger small" id="err_price"></div>
                     </div>
-                    <div class="mb-3">
+                    <div class="col mb-3">
                         <label for="id_description" class="form-label">الوصف</label>
                         <textarea class="form-control" name="description" id="id_description" rows="2"></textarea>
                         <div class="text-danger small" id="err_description"></div>
                     </div>
-                    <div class="row g-2">
-                      <div class="col mb-0">
+                </div>
+                   
+                <div class="row g-2">
+                    <div class="col mb-0">
                         <label for="id_stock" class="form-label">المخزون</label>
                         <input type="number" class="form-control" name="stock" id="id_stock" min="0">
                         <div class="text-danger small" id="err_stock"></div>
-                      </div>
-                      <div class="col mb-0">
-                          <label for="id_low_stock_threshold" class="form-label">حد التنبيه</label>
-                          <input type="number" class="form-control" name="low_stock_threshold" id="id_low_stock_threshold" min="0">
-                          <div class="text-danger small" id="err_low_stock_threshold"></div>
-                      </div>
+                    </div>
+                    <div class="col mb-0">
+                        <label for="id_low_stock_threshold" class="form-label">حد التنبيه</label>
+                        <input type="number" class="form-control" name="low_stock_threshold" id="id_low_stock_threshold" min="0">
+                        <div class="text-danger small" id="err_low_stock_threshold"></div>
                     </div>
                 </div>
+                
+
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
                     <button type="submit" class="btn btn-primary" id="btnSave">حفظ</button>
@@ -218,7 +229,6 @@
                 .then(response => {
                     if (response.data.status === 'success') {
                         document.getElementById('row-' + deleteId).remove();
-                        alert("تم الحذف بنجاح!");
                     } else {
                         alert("حدث خطأ أثناء الحذف.");
                     }

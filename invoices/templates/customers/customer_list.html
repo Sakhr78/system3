@@ -5,31 +5,25 @@
 {% block content %}
 <div class="container-xxl flex-grow-1 container-p-y">
     <h4 class="fw-bold py-3 mb-4">
-      <span class="text-muted fw-light">Tables /</span> قائمة العملاء
+      <span class="text-muted fw-light"> </span> قائمة العملاء
     </h4>
     
-    <a hx-get="/customers/create/" hx-target="#mainContent" class="btn btn-primary mb-3">
+    <a href="{% url 'create_customer' %}"  class="btn btn-primary mb-3">
       إضافة عميل
     </a>
 
 
     <!-- Card containing the table -->
     <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">قائمة الموردين</h5>
-        <small class="text-muted float-end">عرض التفاصيل</small>
-      </div>
+      
       <div class="card-body">
         <div class="table-responsive text-nowrap">
           <table class="table table-striped">
             <thead>
               <tr>
-                <th>اسم المورد</th>
-                <th>جهة الاتصال</th>
+                <th>اسم العميل</th>
                 <th>رقم الهاتف</th>
-                <th>المدينة</th>
-                <th>الرقم الضريبي</th>
-                <th>السجل التجاري</th>
+                <th>العنوان</th>
                 <th>الحالة</th>
                 <th>الإجراءات</th>
               </tr>
@@ -38,28 +32,23 @@
               {% for customer in customers %}
               <tr>
                 <td>{{ customer.name }}</td>
-                <td>{{ customer.contact_person|default:"--" }}</td>
                 <td>{{ customer.phone|default:"--" }}</td>
-                <td>{{ customer.city|default:"--" }}</td>
-                <td>{{ customer.vat_number|default:"--" }}</td>
-                <td>{{ customer.cr_number|default:"--" }}</td>
+                <td>{{ customer.address_line|default:"--" }}</td>
                 <!-- عمود الحالة -->
                 <td><span class="badge bg-label-warning me-1">Pending</span></td>
                 <!-- عمود الإجراءات -->
                 <td>
-                  <div class="dropdown">
-                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                      <i class="bx bx-dots-vertical-rounded"></i>
-                    </button>
-                    <div class="dropdown-menu">
-                      <a class="dropdown-item" href="{% url 'edit_customer' customer.pk %}">
+                    
+                    <div class="-menu">
+                      <a class="-item" href="{% url 'edit_customer' customer.pk %}">
                         <i class="bx bx-edit-alt me-1"></i> تعديل
                       </a>
-                      <a class="dropdown-item" href="{% url 'delete_customer' customer.pk %}">
+                      <a class="-item" href="{% url 'delete_customer' customer.pk %}">
                         <i class="bx bx-trash me-1"></i> حذف
                       </a>
+                      <a class="btn btn-sm btn-info ajax-link" href="{% url 'customer_statement' customer.pk %}">   طباعة كشف حساب </a>
+
                     </div>
-                  </div>
                 </td>
               </tr>
               {% empty %}

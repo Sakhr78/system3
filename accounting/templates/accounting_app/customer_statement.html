@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  /* تنسيق عام */
+  body {
+    font-family: 'Tahoma', sans-serif;
+    direction: rtl;
+    text-align: right;
+    margin: 0;
+    padding: 0;
+  }
+  .invoice-wrapper {
+    width: 800px;
+    margin: 20px auto;
+    background-color: #fff;
+  }
+  .invoice-container {
+    padding: 15px 20px;
+    border: 1px solid #000;
+    position: relative; /* قد يفيد عند إضافة ترويسة أو تذييل ثابت */
+    min-height: 100mm;  /* ارتفاع افتراضي */
+  }
+
+  /* ===== معلومات الشركة الأساسية (أعلى الكشف) ===== */
+  .top-header {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .top-header .company-name {
+    font-size: 22px;
+    font-weight: bold;
+    margin: 0;
+  }
+  .top-header .company-subtitle {
+    font-size: 18px;
+    margin: 0;
+  }
+
+  /* ===== شريط العنوان (دفتر الأستاذ + الحساب + التاريخ) ===== */
+  .span-bar {
+    background-color: #4F81BD; /* اختر الدرجة اللونية المناسبة للتماشي مع التصميم */
+    color: #fff;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: bold;
+    border-radius: 4px; /* حواف دائرية بسيطة */
+  }
+  .span-bar .blue-bar span {
+    display: inline-block;
+    margin: 0 6px;
+  }
+
+  /* الجداول */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+  }
+  .table th,
+  .table td {
+    border: 1px solid #000;
+    padding: 6px;
+    font-size: 14px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .table th {
+    background-color: #f2f2f2;
+  }
+
+  /* زر الطباعة */
+  .print-button {
+    display: block;
+    margin: 15px auto;
+    padding: 8px 20px;
+    font-size: 14px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  .print-button:hover {
+    background-color: #0056b3;
+  }
+
+   /* تنسيقات الطباعة */
+   
+    /* إعدادات الطباعة لتوافق مقاسات A4 */
+    @media print {
+      /* إخفاء العناصر غير المهمة */
+      body * {
+          visibility: hidden;
+      }
+      .invoice-wrapper, .invoice-wrapper * {
+          visibility: visible;
+      }
+      .invoice-container {
+          position: relative;  
+          width: 100% !important;
+          min-height: calc(297mm - 20mm); 
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100% !important;
+          border: none;
+          box-shadow: none;
+          padding: 0 10mm 20mm 10mm; /* ترك هامش سفلي لعدم تقطيع التذييل */
+          /* تجنب قطع الصفحة داخل الفاتورة */
+          page-break-inside: avoid;
+          overflow: visible !important;
+          border: none;
+          box-shadow: none;
+          padding: 0 10mm 20mm 10mm; /* ترك هامش سفلي لعدم تقطيع التذييل */
+          page-break-inside: avoid;
+      }
+      /* يمكن ضبط أبعاد html و body لتكون متوافقة مع A4 */
+       /* تثبيت التذييل في أسفل الفاتورة */
+       .invoice-footer {
+          position: absolute;
+          bottom: 0mm;  /* وضع التذييل على بعد هامش سفلي */
+          left: 0;
+          width: 100%;
+      }
+      .small-summary-table{
+          position: absolute;
+          bottom: 45mm;  /* وضع التذييل على بعد هامش سفلي */
+          left: 0;
+          width: 100%;
+      }
+      html, body {
+          width: 210mm;   /* عرض ورقة A4 */
+          height: 297mm;  /* طول ورقة A4 */
+          margin: 0;
+          padding: 0;
+      }
+      
+      @page {
+          size: A4 portrait;  /* استخدام A4 عمودي */
+          margin: 5mm;       /* هامش مناسب */
+      }
+      /* إخفاء زر الطباعة */
+      .print-button {
+          display: none;
+      }
+  }
+
+
+  
+  /* ===== إعدادات الطباعة (A4 عمودي) ===== */
+  @media print {
+      .invoice-container {
+        width: 100% !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        overflow: visible !important;
+      }
+      html, body {
+        width: 100%;
+        height: auto;
+        margin: 0;
+        padding: 0;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 10mm;
+      }
+    }
+
+</style>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">كشف حساب العميل</h4>
+        <div>
+          <!-- زر للطباعة -->
+          <button type="button" class="btn btn-primary print-button" onclick="window.print();">
+            <i class="fas fa-print"></i> طباعة
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="invoice-wrapper">
+  <div class="invoice-container">
+
+    <!-- ===== الجزء العلوي (مؤسسة حمد مسفر...) و(ستايلك الأقمشة) ===== -->
+    <div class="top-header">
+      <!-- يمكنك استبدال النص الثابت بقيم من متغيرات Django -->
+
+
+      {% if company.name %}       <p class="company-name">  {{ company.name }}</p>  {% endif %}
+
+    </div>
+
+    <!-- ===== الشريط الأزرق (دفتر الأستاذ + الحساب + التواريخ + العملة) ===== -->
+    <div class="span-bar">
+      <!-- يمكنك الاستفادة من متغيرات Django مثل: invoice_type_display أو customer.name إلخ. -->
+      <span>دفتر الأستاذ</span>
+      <br>
+      <span>     
+        {{ account_number }} - {{ customer.name }}
+    الحساب:  </span>
+
+      <div class="blue-bar">
+        {% if first_transaction_date %}
+
+      <span>اعتباراً من 
+
+        {{ first_transaction_date|date:"Y-m-d" }}
+      </span>
+      {% else %}
+      <p>لا توجد أي حركات سابقة.</p>
+    {% endif %}
+
+      <span>إلى تاريخ  {{ print_date|date:"Y-m-d" }}</span>
+      <span>العملة: ريال سعودي</span>
+    </div>
+  </div>
+
+
+    
+    <!-- ===== هنا يبدأ محتوى كشف الحساب ===== -->
+    <table class="table">
+      <thead>
+        <tr>
+          <th>التاريخ</th>
+          <th>البيان</th>
+          <th>مدين</th>
+          <th>دائن</th>
+          <th>الرصيد</th>
+
+        </tr>
+      </thead>
+      <tbody>
+        <!-- كرر الحركات من متغيرات Django -->
+        
+        {% for row in statement %}
+        <tr>
+          <td>{{ row.date|date:"Y-m-d" }}</td>
+          <td>{{ row.description }}</td>
+          <td>{{ row.debit|floatformat:2 }}</td>
+          <td>{{ row.credit|floatformat:2 }}</td>
+          <td>{{ row.balance|floatformat:2 }}</td>
+
+        </tr>
+        {% endfor %}
+       
+        <!-- ... إلخ -->
+      </tbody>
+      <tfoot>
+        <tr>
+          <th></th>
+          <th></th>
+
+          <th>مدين</th>
+          <th>دائن</th>
+          <th>الرصيد</th>
+
+        </tr>
+        <tr>
+          <th></th>
+          <th colspan="">المجموع</th>
+          <td>{{ total_debit|floatformat:2 }}</td>
+          <td>{{ total_credit|floatformat:2 }}</td>
+          <td>{{ final_balance|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+  </div> <!-- /invoice-container -->
+</div> <!-- /invoice-wrapper -->
+{% endblock %}

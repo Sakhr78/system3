@@ -21,7 +21,9 @@ class PurchaseInvoiceForm(forms.ModelForm):
             'supplier', 'invoice_type', 'invoice_number', 'invoice_date',
             'payment_method', 'notes', 'subtotal_before_discount', 'discount_percentage',
             'discount', 'subtotal_before_tax', 'tax_rate', 'tax_amount', 'total_amount',
-            'qr_code','return_reason','original_invoice'
+            'qr_code','return_reason','original_invoice',
+        # أضف حقل الحالة هنا
+            'status'
         ]
         widgets = {
             'supplier': forms.Select(attrs={'class': 'form-control'}),
@@ -71,11 +73,15 @@ class PurchaseInvoiceForm(forms.ModelForm):
                 'step': '0.01'
             }),
             'qr_code': forms.FileInput(attrs={'class': 'form-control'}),
+            # جعل الحقل status Select
+            'status': forms.Select(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # تعيين القيمة الافتراضية لحقل invoice_type إلى 'purchase'
+        self.fields['supplier'].empty_label = "---    اختار مورد     ---"
+
         self.fields['invoice_type'].initial = 'purchase'
         self.fields['invoice_type'].required = False  # جعل الحقل غير مطلوب لأنه مخفي
         self.instance.invoice_type = 'purchase'

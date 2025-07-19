@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>تقرير أعمار الديون (Aging Report)</h2>
+
+<div>
+  <h3>من 0 إلى 30 يوم</h3>
+  <ul>
+    {% for inv in buckets.range_0_30 %}
+      <li>فاتورة: {{ inv.invoice_number }} | تاريخ: {{ inv.invoice_date|date:"Y-m-d" }} | متبقي: {{ inv.remaining_amount }}</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div>
+  <h3>من 31 إلى 60 يوم</h3>
+  <ul>
+    {% for inv in buckets.range_31_60 %}
+      <li>فاتورة: {{ inv.invoice_number }} | تاريخ: {{ inv.invoice_date|date:"Y-m-d" }} | متبقي: {{ inv.remaining_amount }}</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div>
+  <h3>من 61 إلى 90 يوم</h3>
+  <ul>
+    {% for inv in buckets.range_61_90 %}
+      <li>فاتورة: {{ inv.invoice_number }} | تاريخ: {{ inv.invoice_date|date:"Y-m-d" }} | متبقي: {{ inv.remaining_amount }}</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div>
+  <h3>أكثر من 90 يوم</h3>
+  <ul>
+    {% for inv in buckets.range_90_plus %}
+      <li>فاتورة: {{ inv.invoice_number }} | تاريخ: {{ inv.invoice_date|date:"Y-m-d" }} | متبقي: {{ inv.remaining_amount }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

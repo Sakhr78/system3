@@ -9,6 +9,74 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 
+
+
+from django.contrib import messages
+
+# قائمة المنتجات
+
+from django.http import JsonResponse
+
+
+def manage_products(request):
+    products = Product.objects.all().order_by('-id')
+    form = ProductForm()  # إنشاء النموذج لتضمينه في القالب
+    context = {
+        'products': products,
+        'title': 'إدارة المنتجات (AJAX + Modal)',
+        'form': form,  # تمرير النموذج إلى القالب
+    }
+    return render(request, 'inventory/products.html', context)
+    
+
+
+
+
+@csrf_exempt
+def ajax_create_or_update_product(request):
+    if request.method == 'POST':
+        edit_id = request.POST.get('edit_id')
+        if edit_id:
+            product = get_object_or_404(Product, id=edit_id)
+            form = ProductForm(request.POST, instance=product)
+        else:
+            form = ProductForm(request.POST)
+
+        if form.is_valid():
+            with transaction.atomic():
+                obj = form.save()
+            return JsonResponse({
+                'status': 'success',
+                'id': obj.id,
+                'name_ar': obj.name_ar,
+                'serial_number': obj.serial_number or '',
+                'category': obj.category.id,  # أو obj.category.name إذا كنت تريد الاسم
+                'unit': obj.unit.id,          # أو obj.unit.name إذا كنت تريد الاسم
+                'price': str(obj.price),       # تحويل Decimal إلى String
+                'description': obj.description or '',
+                'stock': obj.stock,
+                'low_stock_threshold': obj.low_stock_threshold
+            })
+        else:
+            errors = {field: str(err[0]) for field, err in form.errors.items()}
+            return JsonResponse({
+                'status': 'error',
+                'errors': errors
+            })
+    return JsonResponse({'status': 'invalid request'}, status=400)
+
+@csrf_exempt
+def ajax_delete_product(request):
+    if request.method == 'POST':
+        delete_id = request.POST.get('delete_id')
+        product = get_object_or_404(Product, id=delete_id)
+        product.delete()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'invalid request'}, status=400)
+
+
+
+
 def manage_categories(request):
     """
     يعرض صفحة إدارة التصنيفات ويقوم بتمرير جميع التصنيفات
@@ -19,7 +87,7 @@ def manage_categories(request):
     context = {
         'categories': categories,
         'category_form': category_form,
-        'title': 'إدارة التصنيفات'
+        'title': 'إدارة المجموعات'
     }
     return render(request, 'inventory/category.html', context)
 

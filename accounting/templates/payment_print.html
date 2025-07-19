@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  /* تنسيق عام */
+  body {
+    font-family: 'Tahoma', sans-serif;
+    direction: rtl;
+    text-align: right;
+    margin: 0;
+    padding: 0;
+  }
+
+  .invoice-wrapper {
+    width: 800px;
+    margin: 20px auto;
+    background-color: #fff;
+  }
+  .invoice-container {
+    padding: 15px 20px;
+    border: 1px solid #000;
+  }
+
+  /* فواصل */
+  hr {
+    border: 1px solid black;
+    margin: .1rem 0 !important;
+  }
+
+  /* معلومات الشركة */
+  .company-info {
+    text-align: center;
+    margin-bottom: 10px;
+    margin-top: 10px;
+  }
+  .company-info h2 {
+    font-weight: bold;
+    font-size: 22px;
+    margin: 0;
+  }
+  .company-info .header p {
+    margin: 2px 0;
+  }
+
+  /* عنوان السند */
+  .voucher-title {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  .voucher-title p {
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #0026ff;
+    margin: 0;
+  }
+  .voucher-type {
+    display: inline-block;
+    border: 2px solid #0026ff;
+    padding: 5px 15px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #0026ff;
+    border-radius: 8px;
+  }
+
+  /* الجداول */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+  }
+  .td, .th td, .table th {
+    border: 1px solid #000;
+    padding: 6px;
+    font-size: 14px;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .table th {
+    background-color: #f2f2f2;
+    text-align: center;
+  }
+  .info-table td {
+    width: 25%;
+    vertical-align: middle;
+  }
+  .details-table th {
+    text-align: center;
+  }
+  .details-table td {
+    text-align: center;
+  }
+
+  /* الملخص المالي */
+  .small-summary-table {
+    float: right;
+    width: 400px;
+    border: 1px solid #ddd;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin-top: 10px;
+  }
+  .small-summary-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .small-summary-table th,
+  .small-summary-table td {
+    padding: 2px 12px;
+    text-align: right;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+  }
+  .small-summary-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* تذييل */
+  .invoice-footer {
+    width: 100%;
+    margin-top: 20px;
+    padding-top: 10px;
+  }
+  .invoice-footer table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+  }
+  .footer-cell {
+    vertical-align: middle !important;
+    width: 33%;
+    font-size: 16px;
+    color: #0026ff;
+    font-weight: bold;
+    padding: 0 10px;
+  }
+  .line-wrapper {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+  }
+  .line-wrapper .label {
+    margin-right: 5px;
+  }
+  .line {
+    flex: 1;
+    border-bottom: 1px dashed #000;
+  }
+
+    /* تنسيقات الطباعة */
+   
+    /* إعدادات الطباعة لتوافق مقاسات A4 */
+    @media print {
+        /* إخفاء العناصر غير المهمة */
+        body * {
+            visibility: hidden;
+        }
+        .invoice-wrapper, .invoice-wrapper * {
+            visibility: visible;
+        }
+        .invoice-container {
+            position: relative;  
+            width: 100% !important;
+            min-height: calc(297mm - 20mm); 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            border: none;
+            box-shadow: none;
+            padding: 0 10mm 20mm 10mm; /* ترك هامش سفلي لعدم تقطيع التذييل */
+            /* تجنب قطع الصفحة داخل الفاتورة */
+            page-break-inside: avoid;
+            overflow: visible !important;
+            border: none;
+            box-shadow: none;
+            padding: 0 10mm 20mm 10mm; /* ترك هامش سفلي لعدم تقطيع التذييل */
+            page-break-inside: avoid;
+        }
+        /* يمكن ضبط أبعاد html و body لتكون متوافقة مع A4 */
+         /* تثبيت التذييل في أسفل الفاتورة */
+         .invoice-footer {
+            position: absolute;
+            bottom: 0mm;  /* وضع التذييل على بعد هامش سفلي */
+            left: 0;
+            width: 100%;
+        }
+        .small-summary-table{
+            position: absolute;
+            bottom: 45mm;  /* وضع التذييل على بعد هامش سفلي */
+            left: 0;
+            width: 100%;
+        }
+        html, body {
+            width: 210mm;   /* عرض ورقة A4 */
+            height: 297mm;  /* طول ورقة A4 */
+            margin: 0;
+            padding: 0;
+        }
+        
+        @page {
+            size: A4 portrait;  /* استخدام A4 عمودي */
+            margin: 5mm;       /* هامش مناسب */
+        }
+        /* إخفاء زر الطباعة */
+        .print-button {
+            display: none;
+        }
+    }
+
+
+    
+    /* ===== إعدادات الطباعة (A4 عمودي) ===== */
+    @media print {
+        .invoice-container {
+          width: 100% !important;
+          border: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-shadow: none !important;
+          page-break-inside: avoid;
+          overflow: visible !important;
+        }
+        html, body {
+          width: 100%;
+          height: auto;
+          margin: 0;
+          padding: 0;
+        }
+        @page {
+          size: A4 portrait;
+          margin: 10mm;
+        }
+      }
+
+      .header {  
+        display: flex; /* استخدام فليكس لتنسيق العناصر في نفس السطر */  
+        flex-direction: row; /* عرض العناصر في صف */  
+        justify-content: center;  
+        align-items: center;  
+        font-weight: bold;  
+        line-height: 1.5;  
+    }  
+    
+    .header p {  
+        margin: 0 4px;  
+    }
+
+</style>
+
+
+<div class="row">
+    <div class="col-12">
+    <div class="card shadow-sm mb-4">
+       
+
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">{{ title }}</h4>
+            <i class="fas fa-file-invoice-dollar me-2"></i> تفاصيل الفاتورة: {{ invoice.invoice_number }}
+
+            <div>
+
+            
+
+            
+              <!-- زر للطباعة (يمكن ربطه بصفحة طباعة أو استخدام جافاسكريبت window.print()) -->
+              <button type="button" class="btn btn-primary" onclick="window.print();">
+                <span class="tf-icons bx bx-printer"></span>&nbsp; طباعة الفاتورة             
+                 </button>
+            </div>
+          </div>
+    </div>
+    </div>
+</div>
+
+
+
+<div class="invoice-wrapper" dir="">
+  <div class="invoice-container">
+
+    <!-- فواصل علوية -->
+    <hr>
+    <hr>
+
+                <!-- الجزء العلوي (بيانات الشركة) -->
+                <div style="text-align: center; margin-bottom: 10px; margin-top : 10px; ">
+                   
+                    {% if company.name %}       <h2 style="font-weight: bold; font-size: 22p;">  {{ company.name }}</h2>  {% endif %}
+                        <div  class="header">  
+                           
+                            {% if company.address %} <p>   {{ company.address }} </p> {% endif %}
+
+                            {% if company.fax %} <p>س ت: {{ company.fax }}  </p>  {% endif %}
+
+                            {% if company.phone %}  <p>هاتف: {{ company.phone }}  </p>  {% endif %}
+    
+                            {% if company.vat_number %}   <p>        الرقم الضريبي: {{ company.vat_number }}</p>{% endif %}
+    
+                        </div>  
+                </div>
+   
+
+    <hr>
+    <hr>
+
+    <!-- عنوان السند -->
+    <div class="voucher-title">
+      <p>
+        {% if payment.payment_type == 'receipt' %}
+          سند قبض
+        {% else %}
+          سند رد مبلغ
+        {% endif %}
+      </p>
+      
+    </div>
+
+    <!-- معلومات أساسية (تاريخ، رقم السند) -->
+    <table class="table info-table">
+      <tr>
+        <td class="td"><strong>التاريخ</strong></td>
+        <td class="td">{{ payment.date|date:"d/m/Y" }}</td>
+        <td class="td"><strong>رقم السند</strong></td>
+        <td class="td">{{ payment.voucher_number }}</td>
+      </tr>
+    </table>
+
+    <!-- جدول الملاحظات -->
+    <table class="table">
+      <tr>
+        <td class="td" style="width: 15%;"><strong>ملاحظات</strong></td>
+        <td class="td">{{ payment.notes|default:"لا توجد ملاحظات" }}</td>
+      </tr>
+    </table>
+
+    <!-- جدول الحسابات / مدين / دائن -->
+    <table class="table details-table">
+      <thead>
+        <tr>
+          <th>الحسابات</th>
+          <th>مدين</th>
+          <th>دائن</th>
+          <th>ملاحظات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="td">
+            {% if payment.payment_type == 'receipt' %}
+                 #{{ payment.customer.name }}
+            {% else %}
+                 #{{ payment.customer.name }}
+            {% endif %}
+          </td>
+          <td class="td">
+            {% if payment.payment_type == 'refund' %}
+              {{ payment.amount|floatformat:2 }}
+            {% else %}
+              0.00
+            {% endif %}
+          </td>
+          <td class="td">
+            {% if payment.payment_type == 'receipt' %}
+              {{ payment.amount|floatformat:2 }}
+            {% else %}
+              0.00
+            {% endif %}
+          </td>
+          <td class="td">
+            {% if payment.payment_type == 'receipt' %}
+              دفعة من العميل
+            {% else %}
+              رد مبلغ للعميل
+            {% endif %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- جدول إجمالي المدين والدائن -->
+    <table class="table">
+      <tr>
+        <td class="td"><strong>اجمالي المدين</strong></td>
+        <td class="td">{{ total_debit|floatformat:2 }}</td>
+        <td class="td"><strong>اجمالي الدائن</strong></td>
+        <td class="td">{{ total_credit|floatformat:2 }}</td>
+      </tr>
+    </table>
+
+   
+
+  </div><!-- /invoice-container -->
+</div><!-- /invoice-wrapper -->
+
+<!-- زر الطباعة -->
+{% endblock %}

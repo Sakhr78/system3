@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h4 class="fw-bold py-3 mb-4">
+    <span class="text-muted fw-light"></span> 
+    {% if voucher %} تعديل سند قبض {% else %} إنشاء سند قبض {% endif %}
+  </h4>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        
+        <!-- عرض الأخطاء العامة (غير المرتبطة بحقل معين) -->
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          <ul>
+            {% for error in form.non_field_errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- حقل رقم السند -->
+        <div class="mb-3">
+          <label for="{{ form.voucher_number.id_for_label }}" class="form-label">رقم السند</label>
+          {{ form.voucher_number }}
+          {% if form.voucher_number.errors %}
+            <div class="text-danger">
+              {{ form.voucher_number.errors }}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- الفاتورة المرتبطة -->
+        <div class="mb-3">
+          <label for="{{ form.invoice.id_for_label }}" class="form-label">الفاتورة المرتبطة</label>
+          {{ form.invoice }}
+          {% if form.invoice.errors %}
+            <div class="text-danger">
+              {{ form.invoice.errors }}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- العميل -->
+        <div class="mb-3">
+          <label for="{{ form.customer.id_for_label }}" class="form-label">العميل</label>
+          {{ form.customer }}
+          {% if form.customer.errors %}
+            <div class="text-danger">
+              {{ form.customer.errors }}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- المبلغ -->
+        <div class="mb-3">
+          <label for="{{ form.amount.id_for_label }}" class="form-label">المبلغ</label>
+          {{ form.amount }}
+          {% if form.amount.errors %}
+            <div class="text-danger">
+              {{ form.amount.errors }}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- التاريخ -->
+        <div class="mb-3">
+          <label for="{{ form.date.id_for_label }}" class="form-label">التاريخ</label>
+          {{ form.date }}
+          {% if form.date.errors %}
+            <div class="text-danger">
+              {{ form.date.errors }}
+            </div>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary">حفظ</button>
+        <a href="{% url 'receipt_voucher_list' %}" class="btn btn-secondary">إلغاء</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

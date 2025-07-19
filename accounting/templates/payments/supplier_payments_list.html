@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  /* تحسين تنسيق الصفحة */
+  .payment-list-container {
+      max-width: 1200px;
+      margin: 20px auto;
+  }
+  .payment-list-container .card {
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  .payment-list-container .card-header {
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #e3e6f0;
+  }
+  .payment-list-container h4.fw-bold {
+      font-size: 24px;
+      margin-bottom: 20px;
+  }
+  .table-responsive {
+      margin-top: 20px;
+  }
+  table.table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+  }
+  table.table th,
+  table.table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+  }
+  table.table thead th {
+      background-color: #007bff;
+      color: #fff;
+  }
+  table.table tbody tr:nth-child(odd) {
+      background-color: #f2f2f2;
+  }
+  @media (max-width: 768px) {
+      table.table th,
+      table.table td {
+          font-size: 12px;
+          padding: 8px;
+      }
+  }
+  .search-container {
+      margin-bottom: 20px;
+  }
+  .search-container .form-label {
+      font-weight: bold;
+  }
+  .search-container .form-control {
+      border-radius: 5px;
+  }
+  .btn-search, .btn-reset {
+      width: 100px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y payment-list-container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">{{ title }}</h4>
+    <a href="{% url 'create_supplier_payment' %}" class="btn btn-info">
+      <i class="fas fa-plus me-1"></i> إضافة سند قبض
+    </a>
+  </div>
+
+  <!-- Search Filters -->
+  <div class="card">
+    <div class="card-body">
+      <div class="row g-3 mb-4 search-container">
+        <div class="col-md-2">
+          <label for="voucher_number" class="form-label">رقم السند</label>
+          <input type="text" id="voucher_number" class="form-control" placeholder="ابحث برقم السند">
+        </div>
+        <div class="col-md-3">
+          <label for="supplier_name" class="form-label">اسم المورد</label>
+          <input type="text" id="supplier_name" class="form-control" placeholder="ابحث باسم المورد">
+        </div>
+        <div class="col-md-2">
+          <label for="date_from" class="form-label">من تاريخ</label>
+          <input type="date" id="date_from" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label for="date_to" class="form-label">إلى تاريخ</label>
+          <input type="date" id="date_to" class="form-control">
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="d-flex justify-content-end w-100">
+            <button id="btn-search" class="btn btn-success me-2">
+              <i class="fas fa-search"></i> بحث
+            </button>
+            <button id="btn-reset" class="btn btn-secondary">
+              <i class="fas fa-redo"></i> إعادة تعيين
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="card" style="margin-top: 1rem;">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>رقم السند</th>
+              <th>اسم المورد</th>
+              <th>المبلغ</th>
+              <th>التاريخ</th>
+              <th>نوع الدفعة</th>
+              <th class="text-center">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody">
+            <!-- سيتم ملؤه ديناميكيًا عبر جافاسكريبت -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Confirmation for Deleting Payment -->
+<div class="modal fade" id="deletePaymentModal" tabindex="-1" aria-labelledby="deletePaymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="deletePaymentForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="deletePaymentModalLabel">تأكيد حذف السند</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>هل أنت متأكد من حذف السند رقم <strong id="modalPaymentNumber"></strong>؟</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-danger">حذف السند</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+
+    async function fetchCustomerPayments() {
+      const voucher_number = document.getElementById('voucher_number').value.trim();
+      const supplier_name = document.getElementById('supplier_name').value.trim();
+      const date_from = document.getElementById('date_from').value;
+      const date_to = document.getElementById('date_to').value;
+
+      const url = new URL("{% url 'ajax_search_supplier_payments' %}", window.location.origin);
+      if (voucher_number) url.searchParams.append('voucher_number', voucher_number);
+      if (supplier_name) url.searchParams.append('supplier_name', supplier_name);
+      if (date_from) url.searchParams.append('date_from', date_from);
+      if (date_to) url.searchParams.append('date_to', date_to);
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("خطأ في الاتصال بالسيرفر");
+        const data = await response.json();
+        updateTable(data.results);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        alert("حدث خطأ أثناء جلب النتائج.");
+      }
+    }
+
+    function updateTable(results) {
+      const tbody = document.getElementById('results-tbody');
+      tbody.innerHTML = "";
+
+      if (results.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="6" class="text-center">لا توجد نتائج مطابقة</td>`;
+        tbody.appendChild(row);
+        return;
+      }
+
+      results.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.voucher_number}</td>
+          <td>
+            <a href="/supplier/${item.supplier_id}/statement" class="text-decoration-none">
+              ${item.supplier_name}
+            </a>
+          </td>
+          <td>${item.amount} ر.س</td>
+          <td>${item.date}</td>
+          <td>${item.payment_type_display}</td>
+          <td class="text-center">
+            <!-- تعديل سند -->
+            <a href="/supplier-payment/${item.id}/update" class="btn btn-sm btn-warning" title="تعديل السند">
+              <i class="fas fa-edit"></i> تعديل
+            </a>
+            <!-- طباعة سند -->
+            <a href="/supplier-payment/${item.id}/print" class="btn btn-sm btn-danger" title="طباعة السند">
+              <i class="fas fa-print"></i> طباعة
+            </a>
+            <!-- حذف السند -->
+            <a class="delete-payment-btn btn btn-sm btn-outline-danger" href="javascript:void(0);"
+               data-payment-id="${item.id}" data-payment-number="${item.voucher_number}">
+              <i class="fas fa-trash-alt me-1"></i> حذف
+            </a>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      // ربط أزرار الحذف بنافذة التأكيد
+      document.querySelectorAll('.delete-payment-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+          const paymentId = this.getAttribute('data-payment-id');
+          const paymentNumber = this.getAttribute('data-payment-number');
+          document.getElementById('modalPaymentNumber').innerText = paymentNumber;
+
+          // نفترض أن لديك url باسم 'delete_supplier_payment' يأخذ المعرف
+          const deleteUrl = "{% url 'delete_supplier_payment' 0 %}".replace('0', paymentId);
+          document.getElementById('deletePaymentForm').action = deleteUrl;
+
+          const deleteModal = new bootstrap.Modal(document.getElementById('deletePaymentModal'));
+          deleteModal.show();
+        });
+      });
+    }
+
+    document.getElementById('btn-search').addEventListener('click', function() {
+      fetchCustomerPayments();
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', function() {
+      document.getElementById('voucher_number').value = "";
+      document.getElementById('supplier_name').value = "";
+      document.getElementById('date_from').value = "";
+      document.getElementById('date_to').value = "";
+      fetchCustomerPayments();
+    });
+
+    // جلب النتائج عند فتح الصفحة
+    fetchCustomerPayments();
+  });
+</script>
+{% endblock %}

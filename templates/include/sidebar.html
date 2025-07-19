@@ -77,6 +77,109 @@
         </a>
       </li>
 
+
+
+
+
+
+             <!-- User interface -->
+             <li class="menu-item">
+              <a href="javascript:void(0)" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-box"></i>
+                <div data-i18n="User interface">المبيعات </div>
+              </a>
+              <ul class="menu-sub">
+      
+                <li class="menu-item">
+                  <a href="{% url 'sales_invoice_list' %}" class="menu-link">
+                    <div data-i18n="Accordion">فواتير المبيعات </div>
+                  </a>
+                </li>
+                <li class="menu-item">
+                  <a href="{% url 'create_sales_invoice' %}" class="menu-link">
+                    <div data-i18n="Alerts">انشاء فاتوره</div>
+                  </a>
+                </li>
+      
+                
+      
+              </ul>
+            </li>
+      
+      
+              <!-- User interface -->
+              <li class="menu-item">
+                <a href="javascript:void(0)" class="menu-link menu-toggle">
+                  <i class="menu-icon tf-icons bx bx-box"></i>
+                  <div data-i18n="User interface">المشتريات </div>
+                </a>
+                <ul class="menu-sub">
+        
+      
+                  <li class="menu-item">
+                    <a href="{% url 'purchase_invoice_list' %}" class="menu-link">
+                      <div data-i18n="Accordion"> فواتير المشتريات</div>
+                    </a>
+                  </li>
+                  <li class="menu-item">
+                    <a href="{% url 'create_purchase_invoice' %}" class="menu-link">
+                      <div data-i18n="Badges">انشاء فاتوره</div>
+                    </a>
+                  </li>
+        
+                 
+         
+        
+                </ul>
+              </li>
+      
+               <!-- User interface -->
+               <li class="menu-item">
+                <a href="javascript:void(0)" class="menu-link menu-toggle">
+                  <i class="menu-icon tf-icons bx bx-box"></i>
+                  <div data-i18n="User interface">المدفوعات </div>
+                </a>
+                <ul class="menu-sub">
+        
+      
+                  <li class="menu-item">
+                    <a href="{% url 'customer_payment_list' %}" class="menu-link">
+                      <div data-i18n="Accordion">  سندات قبض</div>
+                    </a>
+                  </li>
+                  <li class="menu-item">
+                    <a href="{% url 'supplier_payment_list' %}" class="menu-link">
+                      <div data-i18n="Badges"> سندات صرف</div>
+                    </a>
+                  </li>
+        
+                 
+         
+        
+                </ul>
+              </li>
+                      <!-- User interface -->
+                      <li class="menu-item">
+                        <a href="javascript:void(0)" class="menu-link menu-toggle">
+                          <i class="menu-icon tf-icons bx bx-undo"></i>
+                          <div data-i18n="User interface">المرتجعات </div>
+                        </a>
+                        <ul class="menu-sub">
+              
+                          <li class="menu-item">
+                           <a href="{% url 'list_sales_returns' %}" class="menu-link">
+                             <div data-i18n="Accordion"> مرتجع مبيعات </div>
+                           </a>
+                         </li>
+                         <li class="menu-item">
+                          <a href="{% url 'list_purchases_returns' %}" class="menu-link">
+                            <div data-i18n="Accordion"> مرتجع مشتريات </div>
+                          </a>
+                        </li>
+                 
+                
+                        </ul>
+                      </li>
       <!-- Layouts -->
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -125,78 +228,7 @@
 
       
 
-       <!-- User interface -->
-       <li class="menu-item">
-        <a href="javascript:void(0)" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-box"></i>
-          <div data-i18n="User interface">المبيعات </div>
-        </a>
-        <ul class="menu-sub">
 
-          <li class="menu-item">
-            <a href="{% url 'sales_invoice_list' %}" class="menu-link">
-              <div data-i18n="Accordion">فواتير المبيعات </div>
-            </a>
-          </li>
-          <li class="menu-item">
-            <a href="{% url 'create_sales_invoice' %}" class="menu-link">
-              <div data-i18n="Alerts">انشاء فاتوره</div>
-            </a>
-          </li>
-
-          <li class="menu-header small text-uppercase"><span class="menu-header-text">المشتريات</span></li>
-
-         <li class="menu-item">
-          <a href="{% url 'list_sales_returns' %}" class="menu-link">
-            <div data-i18n="Accordion"> مرتجع مبيعات </div>
-          </a>
-        </li>
-        <li class="menu-item">
-          <a href="{% url 'create_sales_return_invoice' %}" class="menu-link">
-            <div data-i18n="Alerts">انشاء فاتوره</div>
-          </a>
-        </li>
-
-        </ul>
-      </li>
-
-
-        <!-- User interface -->
-        <li class="menu-item">
-          <a href="javascript:void(0)" class="menu-link menu-toggle">
-            <i class="menu-icon tf-icons bx bx-box"></i>
-            <div data-i18n="User interface">المشتريات </div>
-          </a>
-          <ul class="menu-sub">
-  
-
-            <li class="menu-item">
-              <a href="{% url 'purchase_invoice_list' %}" class="menu-link">
-                <div data-i18n="Accordion"> فواتير المشتريات</div>
-              </a>
-            </li>
-            <li class="menu-item">
-              <a href="{% url 'create_purchase_invoice' %}" class="menu-link">
-                <div data-i18n="Badges">انشاء فاتوره</div>
-              </a>
-            </li>
-  
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">المشتريات</span></li>
-
-            <li class="menu-item">
-             <a href="{% url 'list_purchases_returns' %}" class="menu-link">
-               <div data-i18n="Accordion"> مرتجع مبيعات </div>
-             </a>
-           </li>
-           <li class="menu-item">
-             <a href="{% url 'create_purchase_return_invoice' %}" class="menu-link">
-               <div data-i18n="Alerts">انشاء فاتوره</div>
-             </a>
-           </li>
-   
-  
-          </ul>
-        </li>
 
 
       <li class="menu-item">
@@ -215,11 +247,6 @@
               <div data-i18n="Notifications">طرق الدفع</div>
             </a>
           </li>
-          <li class="menu-item">
-            <a href="pages-account-settings-connections.html" class="menu-link">
-              <div data-i18n="Connections">Connections</div>
-            </a>
-          </li>
         </ul>
       </li>
       <li class="menu-item">
@@ -236,7 +263,7 @@
 
           <li class="menu-item">
             <a href="{% url 'manage_categories' %}" class="menu-link" target="_blank">
-              <div data-i18n="Basic">الاصناف</div>
+              <div data-i18n="Basic">المجموعات</div>
             </a>
           </li>
           <li class="menu-item">

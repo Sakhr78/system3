@@ -1,3 +1,4 @@
+from re import S
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
@@ -20,28 +21,132 @@ def purchase_invoice_list(request):
     عرض قائمة فواتير المبيعات مع إمكانية البحث والتصفية حسب اسم العميل وتاريخ الفاتورة.
     """
     # جلب فواتير المبيعات وترتيبها تنازليًا بحسب تاريخ الفاتورة (الأحدث أولاً)
-    invoices = Invoice.objects.filter(invoice_type='purchase').order_by('-invoice_date')
-    
-    # خيارات البحث من GET
-    supplier = request.GET.get('supplier')
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    
-    if supplier:
-        invoices = invoices.filter(supplier__name__icontains=supplier)
-    if start_date:
-        invoices = invoices.filter(invoice_date__gte=start_date)
-    if end_date:
-        invoices = invoices.filter(invoice_date__lte=end_date)
-    
+
     context = {
-        'invoices': invoices,
-        'title': 'قائمة فواتير المبيعات'
+        'title': 'قائمة فواتير المشتريات'
     }
     return render(request, 'purchase/invoice_list.html', context)
 
 
+def ajax_search_purchase_invoices(request):
+    invoice_number = request.GET.get('invoice_number', '').strip()
+    supplier_name = request.GET.get('supplier_name', '').strip()
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+
+    # فلترة فواتير المبيعات فقط
+    qs = Invoice.objects.filter(invoice_type='purchase').order_by('-invoice_date')
+
+    if invoice_number:
+        qs = qs.filter(invoice_number__icontains=invoice_number)
+
+    if supplier_name:
+        qs = qs.filter(supplier__name__icontains=supplier_name)
+
+    if date_from:
+        try:
+            date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+            qs = qs.filter(invoice_date__date__gte=date_from)
+        except ValueError:
+            pass  # إذا كانت صيغة التاريخ غير صحيحة، يمكن تجاهل الفلترة
+
+    if date_to:
+        try:
+            date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+            qs = qs.filter(invoice_date__date__lte=date_to)
+        except ValueError:
+            pass  # إذا كانت صيغة التاريخ غير صحيحة، يمكن تجاهل الفلترة
+
+    # ترتيب تنازلي (الأحدث أولاً)
+    qs = qs.order_by('-id')
+
+    data = []
+    for invoice in qs:
+        data.append({
+            'id': invoice.id,
+            'invoice_number': invoice.invoice_number,
+            'invoice_date': invoice.invoice_date.strftime('%Y-%m-%d %H:%M'),
+            'supplier_name': invoice.supplier.name if invoice.supplier else '—',
+            'return_reason': invoice.return_reason if invoice.return_reason else '—',
+            'total_amount': str(invoice.total_amount),
+        })
+
+    return JsonResponse({'results': data})
+
+
+
+
 def create_purchase_invoice(request):
+    supplier_form = SupplierForm()
+
+    if request.method == 'POST':
+        form = PurchaseInvoiceForm(request.POST, request.FILES)
+        formset = InvoiceItemFormSet(request.POST, prefix='items')
+        if form.is_valid() and formset.is_valid():
+            try:
+                with transaction.atomic():
+                    # احفظ الفاتورة مع ربطها بالعميل
+                    invoice = form.save(commit=False)
+                    invoice.supplier = form.cleaned_data['supplier']
+                    invoice.save()
+                    
+                    formset.instance = invoice
+                    formset.save()
+                    
+                    # منطق تحديث المخزون (يبقى كما هو)
+                    for item_form in formset:
+                        if not item_form.cleaned_data.get('DELETE', False):
+                            item = item_form.save(commit=False)
+                            product = item.product
+                            base_quantity = item.quantity
+                            
+                            #if product.stock < base_quantity:
+                            #    raise Exception(f"لا توجد كمية كافية للمنتج {product.name_ar}")
+                             # زيادة المخزون بدلاً من إنقاصه
+                            
+                            if product.stock is None:
+                                product.stock = Decimal('999999999')  # قيمة كبيرة جدًا
+                            product.stock += int(base_quantity)
+                            product.save()
+
+                messages.success(request, 'تم إنشاء فاتورة المبيعات بنجاح.')
+                return redirect('purchase_invoice_detail', invoice_id=invoice.id)
+            except Exception as e:
+                messages.error(request, f'حدث خطأ: {str(e)}')
+        else:
+            messages.error(request, 'يرجى تصحيح الأخطاء في النموذج')
+    else:
+        form = PurchaseInvoiceForm()
+        formset = InvoiceItemFormSet(prefix='items')
+    
+    # الباقي يبقى كما هو
+    products = Product.objects.all()
+    product_prices = {str(product.id): str(product.price) for product in products}
+    product_units = {str(product.id): product.unit.abbreviation for product in products}
+    conversion_units = {
+        str(conv.id): {
+            "abbr": conv.larger_unit_name if hasattr(conv, 'larger_unit_name') else conv.conversion_unit,
+            "factor": str(conv.conversion_factor)
+        }
+        for conv in UnitConversion.objects.all()
+    }
+    context = {
+        'supplier_form': supplier_form,
+
+        'form': form,
+        'formset': formset,
+        'title': 'إنشاء فاتورة مبيعات - النظام المحاسبي',
+        'product_prices': json.dumps(product_prices),
+        'product_units': json.dumps(product_units),
+        'conversion_units': json.dumps(conversion_units),
+    }
+    return render(request, 'purchase/create_invoice.html', context)
+
+
+
+
+def create_purchase_invoice(request):
+    supplier_form = SupplierForm()
     if request.method == 'POST':
         form = PurchaseInvoiceForm(request.POST, request.FILES)
         formset = InvoiceItemFormSet(request.POST, prefix='items')
@@ -69,7 +174,7 @@ def create_purchase_invoice(request):
                             product.save()
 
                 messages.success(request, 'تم إنشاء فاتورة المبيعات بنجاح.')
-                return redirect('purchase_invoice_detail', invoice_id=invoice.id)
+                return redirect('invoice_print_view', invoice_id=invoice.id)
             except Exception as e:
                 messages.error(request, f'حدث خطأ: {str(e)}')
         else:
@@ -90,6 +195,8 @@ def create_purchase_invoice(request):
         for conv in UnitConversion.objects.all()
     }
     context = {
+        'supplier_form': supplier_form,
+
         'form': form,
         'formset': formset,
         'title': 'إنشاء فاتورة مبيعات - النظام المحاسبي',
@@ -98,6 +205,32 @@ def create_purchase_invoice(request):
         'conversion_units': json.dumps(conversion_units),
     }
     return render(request, 'purchase/create_invoice.html', context)
+
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+
+@csrf_exempt
+def add_supplier(request):
+    if request.method == 'POST':
+        form = SupplierForm(request.POST)
+        if form.is_valid():
+            supplier = form.save()
+            return JsonResponse({
+                'success': True,
+                'supplier_id': supplier.id,
+                'supplier_name': supplier.name
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors.as_json()
+            })
+    return JsonResponse({'success': False, 'errors': 'Invalid request method'})
+
 
 
 def update_purchase_invoice(request, invoice_id):

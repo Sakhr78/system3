@@ -331,11 +331,9 @@ document.addEventListener('DOMContentLoaded', function() {
               row.querySelector('.td-template').innerText     = data.template;
               row.querySelector('.td-is_active').innerText    = data.is_active;
             }
-            alert("تم تحديث الوحدة بنجاح!");
           } else {
             // إنشاء
             addRowToUnitTable(data);
-            alert("تم إنشاء الوحدة بنجاح!");
           }
           unitModal.hide();
         } else {
@@ -413,7 +411,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(resp => {
           if (resp.data.status === 'success') {
             newRow.remove();
-            alert("تم حذف الوحدة بنجاح!");
           } else {
             alert("حدث خطأ أثناء الحذف.");
           }
@@ -437,7 +434,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(resp => {
           if (resp.data.status === 'success') {
             document.getElementById('row-unit-' + deleteId).remove();
-            alert("تم حذف الوحدة بنجاح!");
           } else {
             alert("حدث خطأ أثناء الحذف.");
           }
