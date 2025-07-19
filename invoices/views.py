@@ -219,6 +219,84 @@ def invoice_print_view(request, invoice_id):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import qrcode
+import base64
+from io import BytesIO
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from .models import Invoice
+from datetime import timezone as dt_timezone
+
+def generate_qr_code_view(request, invoice_id):
+    """
+    View لتوليد صورة QR Code ديناميكيًا بناءً على بيانات الفاتورة.
+    """
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+
+    # التحقق من وجود البيانات اللازمة لتوليد الكود
+    if not invoice.company or not invoice.company.vat_number:
+        # يمكنك إرجاع صورة فارغة أو رسالة خطأ
+        return HttpResponse("بيانات الشركة غير مكتملة لتوليد QR Code", status=404)
+
+    # 1. تجميع بيانات TLV (Tag-Length-Value)
+    timestamp = invoice.invoice_date.astimezone(dt_timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    data = {
+        1: invoice.company.name or "",
+        2: invoice.company.vat_number or "",
+        3: timestamp,
+        4: f"{invoice.total_amount:.2f}",
+        5: f"{invoice.tax_amount:.2f}"
+    }
+    
+    tlv_data = bytearray()
+    for tag, value in data.items():
+        value_bytes = str(value).encode('utf-8')
+        tlv_data += bytes([tag]) + bytes([len(value_bytes)]) + value_bytes
+
+    # 2. تحويل إلى Base64
+    base64_payload = base64.b64encode(tlv_data).decode('utf-8')
+
+    # 3. توليد صورة QR Code
+    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=4, border=2)
+    qr.add_data(base64_payload)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    # 4. حفظ الصورة في الذاكرة وإرجاعها كـ HttpResponse
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    
+    # إرجاع الصورة مباشرة في الاستجابة
+    return HttpResponse(buffer.getvalue(), content_type='image/png')
+
+
+
+
+
+
+
+
+
+
+
+
+
 def print_invoice(request, invoice_id):
     register_arabic_font()
     

@@ -652,34 +652,34 @@ class Invoice(models.Model):
             balance_after=new_balance
         )
 
-    def generate_qr_code(self):
+ #   def generate_qr_code(self):
         """
         اختياري: إنشاء QR Code بناءً على بيانات الفاتورة.
         """
-        if not self.company or not self.company.vat_number:
-            return
-        timestamp = self.invoice_date.astimezone(dt_timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        data = {
-            1: self.company.name or "",
-            2: self.company.vat_number or "",
-            3: timestamp,
-            4: f"{self.total_amount:.2f}",
-            5: f"{self.tax_amount:.2f}"
-        }
-        tlv_data = bytearray()
-        for tag, value in data.items():
-            value_bytes = value.encode('utf-8')
-            tlv_data += bytes([tag]) + bytes([len(value_bytes)]) + value_bytes
+      #  if not self.company or not self.company.vat_number:
+     #       return
+     #   timestamp = self.invoice_date.astimezone(dt_timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    #    data = {
+         #   1: self.company.name or "",
+        #    2: self.company.vat_number or "",
+       #     3: timestamp,
+      #      4: f"{self.total_amount:.2f}",
+     #       5: f"{self.tax_amount:.2f}"
+    #    }
+      #  tlv_data = bytearray()
+     #   for tag, value in data.items():
+          #  value_bytes = value.encode('utf-8')
+         #   tlv_data += bytes([tag]) + bytes([len(value_bytes)]) + value_bytes
 
-        base64_payload = base64.b64encode(tlv_data).decode('utf-8')
-        qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=4, border=2)
-        qr.add_data(base64_payload)
-        qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="white")
-        buffer = BytesIO()
-        img.save(buffer, format='PNG')
-        filename = f'qr_{self.invoice_number}.png'
-        self.qr_code.save(filename, File(buffer), save=False)
+        #base64_payload = base64.b64encode(tlv_data).decode('utf-8')
+       # qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=4, border=2)
+      #  qr.add_data(base64_payload)
+     #   qr.make(fit=True)
+    #    img = qr.make_image(fill_color="black", back_color="white")
+   #     buffer = BytesIO()
+  #      img.save(buffer, format='PNG')
+ #       filename = f'qr_{self.invoice_number}.png'
+#        self.qr_code.save(filename, File(buffer), save=False)
 
     def clean(self):
         super().clean()
@@ -815,7 +815,7 @@ def update_invoice_totals(sender, instance, **kwargs):
     invoice = instance.invoice
     if invoice and not kwargs.get('raw', False):
         invoice.calculate_totals()
-        invoice.generate_qr_code()
+    #    invoice.generate_qr_code()
         invoice.save(update_fields=[
             'subtotal_before_discount',
             'discount',
@@ -823,7 +823,7 @@ def update_invoice_totals(sender, instance, **kwargs):
             'subtotal_before_tax',
             'tax_amount',
             'total_amount',
-            'qr_code'
+            #'qr_code'
         ])
 
 

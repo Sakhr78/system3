@@ -456,22 +456,9 @@
 
                             <!-- العمود الأوسط (QR Code) -->
                             <td class="footer-cell qr">
-                                {% if invoice.qr_code %}
-                                    <img src="{{ invoice.qr_code.url }}" alt="QR Code">
-                                {% else %}
-                                     
-                                {% endif %}
-                            
-                            <!-- QR Code -->
-    <div>
-      <h5>QR Code:</h5>
-      <img src="{{ qr_code_url }}" alt="QR Code للفاتورة {{ invoice.invoice_number }}">
-    </div>
-    <!-- Barcode -->
-    <div style="margin-top: 8px;">
-      <h5>Barcode:</h5>
-      <img src="{{ barcode_url }}" alt="Barcode للفاتورة {{ invoice.invoice_number }}">
-    </div>
+                                
+                                    <img src="{% url 'generate_qr_code' invoice.id %}" alt="QR Code">
+
                             </td>
 
                             <!-- العمود الأيسر (المستلم) -->

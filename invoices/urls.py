@@ -8,11 +8,6 @@ urlpatterns = [
     # إدارة الفواتير
  
  
-    #path('invoices/list/return/', views.return_invoice_list, name='return_invoice_list'),
-   # path('invoices/list/transfer/', views.transfer_invoice_list, name='transfer_invoice_list'),
-   # path('invoices/list/adjustment/', views.adjustment_invoice_list, name='adjustment_invoice_list'),
-   # path('invoices/list/expense/', views.expense_invoice_list, name='expense_invoice_list'),
-   # path('invoices/list/other/', views.other_invoice_list, name='other_invoice_list'),
 
 
     path('invoices/list/statistics/', views.dashboard, name='sales_statistics'),
@@ -31,7 +26,9 @@ urlpatterns = [
     # مسار تعديل فاتورة المبيعات
     # مسار تعديل فاتورة المشتريات
     path('print-view/<int:invoice_id>/', views.invoice_print_view, name='invoice_print_view'),
-  #  path('print/<int:invoice_id>/', views.print_invoice, name='print_invoice'),
+    path('invoice/<int:invoice_id>/qr-code/', views.generate_qr_code_view, name='generate_qr_code'),
+
+ #  path('print/<int:invoice_id>/', views.print_invoice, name='print_invoice'),
     
     
     
