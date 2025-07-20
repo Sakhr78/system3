@@ -13,7 +13,7 @@ from .views import AdminLoginView, logout_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('invoice/<int:invoice_id>/print/', views.print_invoice, name='print_invoice'),
+#    path('invoice/<int:invoice_id>/print/', views.print_invoice, name='print_invoice'),
     path('', include('invoices.urls')),
     path('', include('sales.urls')),
     path('', include('purchase.urls')),

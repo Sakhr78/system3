@@ -5,8 +5,8 @@
     /* 
     =================================================================
     * Template: Exact Invoice Replica - Django Integrated
-    * Version: 8.1 (Layout Corrected)
-    * Description: The precise visual design with corrected variable order to match the image.
+    * Version: 8.0
+    * Description: The precise visual design integrated with dynamic Django template variables.
     * Print-Optimized to prevent clipping issues.
     =================================================================
     */
@@ -198,6 +198,7 @@
                     <div class="logo-s">S</div> <!-- عنصر ثابت حسب التصميم -->
                 </div>
                 <div class="header-section header-left">
+                    <!-- هذه البيانات ثابتة حسب التصميم، يمكنك ربطها بمتغيرات إذا كانت متوفرة -->
                     <h2>Stylikone for Trading est</h2>
                     <h2>Style Fabric</h2>
                     <p>VAT: {{ invoice.company.vat_number|default:"311128669300003" }}</p>
@@ -212,17 +213,16 @@
 
             <!-- Details -->
             <div class="details-box">
-                <!-- === الجزء الأيمن من الصندوق (بيانات العميل) === -->
-                <div class="details-col" style="text-align: right;">
-                    <p><strong>السادة:</strong> {{ invoice.customer.name|default:"-" }}</p>
-                    <p><strong>التاريخ:</strong> {{ invoice.invoice_date|date:"d/m/Y" }}</p>
-                    <p><strong>البيان:</strong> {{ invoice.notes|default:"-" }}</p>
-                </div>
-                <!-- === الجزء الأيسر من الصندوق (بيانات الفاتورة) === -->
-                <div class="details-col" style="text-align: right;">
+                                <div class="details-col" style="text-align: right;">
+
                     <p><strong>رقم الفاتورة:</strong> {{ invoice.invoice_number }}</p>
                     <p><strong>البائع:</strong></p> <!-- يمكنك إضافة متغير للبائع هنا إذا وجد -->
                     <p><strong>الرقم الضريبي:</strong> {{ invoice.customer.vat_number|default:"-" }}</p>
+                </div>
+                <div class="details-col" style="text-align: right;">
+                    <p><strong>السادة:</strong> {{ invoice.customer.name|default:"-" }}</p>
+                    <p><strong>التاريخ:</strong> {{ invoice.invoice_date|date:"d/m/Y" }}</p>
+                    <p><strong>البيان:</strong> {{ invoice.notes|default:"-" }}</p> <!-- استخدام حقل الملاحظات للبيان -->
                 </div>
             </div>
 
@@ -232,10 +232,10 @@
                     <tr>
                         <th>مسلسل</th>
                         <th class="description-col">البيان</th>
-                        <th>ياردة</th>
-                        <th>طاقة</th>
+                        <th>ياردة</th> <!-- بيانات غير متوفرة في الموديل -->
+                        <th>طاقة</th> <!-- بيانات غير متوفرة في الموديل -->
                         <th>الأفرادي</th>
-                        <th>مبلغ الضريبة</th>
+                        <th>مبلغ الضريبة</th> <!-- بيانات غير متوفرة لكل بند -->
                         <th>الإجمالي</th>
                     </tr>
                 </thead>
@@ -245,7 +245,7 @@
                         <td>{{ forloop.counter }}</td>
                         <td class="description-col">{{ item.product.serial_number|default:"" }} -- {{ item.product.name_ar|default:"-" }}</td>
                         <td></td> <!-- حقل فارغ لـ "ياردة" -->
-                        <td style="text-align: center;">{{ item.quantity|floatformat:"0g" }}</td>
+                        <td style="text-align: center;">{{ item.quantity|floatformat:"0g" }}</td> <!-- استخدام الكمية كـ "طاقة" -->
                         <td style="text-align: center;">{{ item.unit_price|floatformat:2 }}</td>
                         <td></td> <!-- حقل فارغ لـ "مبلغ الضريبة" لكل بند -->
                         <td style="text-align: center;">{{ item.total|floatformat:2 }}</td>
@@ -263,7 +263,7 @@
                 <table class="summary-table">
                     <tr>
                         <td class="summary-label">إجمالي الكمية</td>
-                        <td>{{ invoice.total_quantity|default:"-" }}</td>
+                        <td>{{ invoice.total_quantity|default:"-" }}</td> <!-- افترضت وجود متغير total_quantity -->
                     </tr>
                     <tr>
                         <td class="summary-label">المجموع الجزئي فاتورة</td>
@@ -301,14 +301,15 @@
             <div class="invoice-footer">
                 <div class="qr-section">
                     <div class="qr-code">
-                        <img src="{% url 'generate_qr_code' invoice.id %}" alt="QR Code">
+                                    <img src="{% url 'generate_qr_code' invoice.id %}" alt="QR Code">
                     </div>
+                    
                     <div class="print-info">
                         <span>PrintedOn: {% now "d/m/Y" %}</span>
                         <span>Time: {% now "H:i" %}</span>
                     </div>
                 </div>
-                <!-- تفاصيل البنك ثابتة كما في التصميم الأصلي 
+                <!-- تفاصيل البنك ثابتة كما في التصميم الأصلي -->
                 <div class="bank-details">
                      <div class="bank-account">
                         <h4>البنك الاهلي</h4>
@@ -321,8 +322,7 @@
                         <p><strong>رقم الحساب:</strong> 453608010477547</p>
                         <p><strong>رقم الايبان:</strong> SA9180000453608010477547</p>
                     </div>
-             </div>
-           -->        <!-- تفاصيل البنك ثابتة كما في التصميم الأصلي -->
+                </div>
             </div>
 
         </div>

@@ -1,0 +1,446 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+    /* 
+    =================================================================
+    * Template: Stylikone Trading Invoice
+    * Version: 2.0
+    * Author: Gemini AI
+    * Description: A precise replica of the provided invoice image.
+    =================================================================
+    */
+
+    /* ========== General & Font Settings ========== */
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+
+    body {
+        direction: rtl;
+        text-align: right;
+        background-color: #f0f2f5;
+        font-family: 'Tajawal', sans-serif;
+    }
+
+    .invoice-wrapper {
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .invoice-container {
+        width: 800px;
+        max-width: 100%;
+        background-color: #fff;
+        padding: 25px 35px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        font-size: 13px;
+        color: #000;
+    }
+
+    /* ========== Header Section ========== */
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+        padding-bottom: 15px;
+    }
+
+    .header-left, .header-right {
+        width: 48%;
+    }
+
+    .header-left {
+        text-align: left;
+    }
+
+    .header-left h2 {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 0;
+        padding: 0;
+    }
+
+    .header-left .logo-s {
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 90px;
+        font-weight: bold;
+        line-height: 1;
+        color: #000;
+    }
+
+    .header-right h3 {
+        font-size: 18px;
+        font-weight: bold;
+        margin: 0 0 5px 0;
+    }
+
+    .header-right p {
+        margin: 2px 0;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    /* ========== Invoice Title ========== */
+    .invoice-title-section {
+        text-align: center;
+        margin: 10px 0 20px 0;
+        font-size: 16px;
+        font-weight: bold;
+        border: 1px solid #000;
+        padding: 5px;
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* ========== Customer & Invoice Details ========== */
+    .invoice-details-grid {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        gap: 10px;
+    }
+
+    .details-box {
+        width: 100%;
+        border: 1px solid #000;
+    }
+
+    .details-box table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .details-box td {
+        padding: 4px 8px;
+        font-size: 12px;
+        vertical-align: middle;
+    }
+
+    .details-box .label {
+        font-weight: bold;
+        width: 100px;
+    }
+    
+    .details-box tr:not(:last-child) td {
+        border-bottom: 1px solid #000;
+    }
+
+    /* ========== Main Items Table ========== */
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 0;
+    }
+
+    .items-table th, .items-table td {
+        border: 1px solid #000;
+        padding: 6px 8px;
+        text-align: center;
+        font-size: 12px;
+    }
+
+    .items-table th {
+        background-color: #d9e2f3; /* Light blue from image */
+        font-weight: bold;
+    }
+    
+    .items-table .description-col {
+        text-align: right;
+        width: 40%;
+    }
+
+    /* ========== Summary Tables & Footer ========== */
+    .summary-container {
+        display: flex;
+        justify-content: flex-end; /* Align to the left (since it's RTL) */
+        width: 100%;
+    }
+
+    .summary-section {
+        width: 45%; /* Adjust width as needed */
+        margin-top: 0;
+    }
+    
+    .summary-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .summary-table td {
+        border: 1px solid #000;
+        padding: 5px 8px;
+        font-size: 12px;
+    }
+    
+    .summary-table .label {
+        font-weight: bold;
+        background-color: #d9e2f3;
+        width: 60%;
+    }
+    
+    .summary-table .value {
+        text-align: left;
+        font-weight: bold;
+    }
+
+    .total-in-words {
+        margin-top: 15px;
+        font-size: 13px;
+        font-weight: bold;
+        color: red;
+    }
+
+    /* ========== Signatures Section ========== */
+    .signatures-section {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 40px;
+        padding-top: 15px;
+    }
+
+    .signature-box {
+        text-align: center;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .signature-box .line {
+        border-bottom: 1px dotted #555;
+        width: 200px;
+        margin-top: 30px;
+    }
+
+    /* ========== Bank & QR Code Footer ========== */
+    .bank-details-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: 25px;
+        padding-top: 10px;
+        border-top: 1px solid #000;
+    }
+
+    .bank-info-container {
+        display: flex;
+        justify-content: space-between;
+        width: 65%;
+    }
+
+    .bank-info {
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .bank-info .bank-name {
+        font-weight: bold;
+    }
+
+    .qr-code-box {
+        text-align: center;
+    }
+
+    .qr-code-box img {
+        width: 100px;
+        height: 100px;
+    }
+
+    .print-info {
+        font-size: 10px;
+        color: #777;
+        margin-top: 15px;
+        text-align: left;
+    }
+
+    /* ========== Print Styles ========== */
+    @media print {
+        @page {
+            size: A4;
+            margin: 10mm;
+        }
+        body {
+            background-color: #fff;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .no-print {
+            display: none !important;
+        }
+        .invoice-wrapper {
+            padding: 0;
+            box-shadow: none;
+            border: none;
+        }
+        .invoice-container {
+            width: 100%;
+            box-shadow: none;
+            border: none;
+            padding: 0;
+        }
+        .items-table th, .summary-table .label {
+            background-color: #d9e2f3 !important;
+        }
+    }
+</style>
+
+<!-- ======================= HTML Content ======================= -->
+
+<div class="no-print" style="text-align: center; padding: 15px;">
+    <button class="print-button" onclick="window.print();">
+        <i class="fas fa-print me-1"></i> طباعة الفاتورة
+    </button>
+</div>
+
+<div class="invoice-wrapper">
+    <div class="invoice-container">
+
+        <!-- Header -->
+        <div class="invoice-header">
+            <div class="header-right">
+                <h3>مؤسسة ستايلك ون للتجارة</h3>
+                <h3>ستايل للاقمشة</h3>
+                <p><strong>الرقم الضريبي:</strong> 311128669300003</p>
+                <p>جدة - البلد - سوق البدو</p>
+            </div>
+            <div class="header-left">
+                <div class="logo-s">S</div>
+                <h2>Stylikone for Trading est</h2>
+                <p><strong>Style Fabric</strong></p>
+                <p>VAT: 311128669300003</p>
+                <p>Jeddah - Albado Market</p>
+            </div>
+        </div>
+
+        <!-- Invoice Title -->
+        <div class="invoice-title-section">
+            فاتورة ضريبية نقدي / عادية
+        </div>
+
+        <!-- Customer and Invoice Details -->
+        <div class="invoice-details-grid">
+            <div class="details-box">
+                <table>
+                    <tbody>
+                        <tr>
+                            <td class="label">السادة:</td>
+                            <td>شركة اخوان الصفاء باب شريف</td>
+                        </tr>
+                        <tr>
+                            <td class="label">التاريخ:</td>
+                            <td>15/07/2025</td>
+                        </tr>
+                        <tr>
+                            <td class="label">البيان:</td>
+                            <td>خياط عبدالمنعم</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="details-box">
+                <table>
+                    <tbody>
+                        <tr>
+                            <td class="label">رقم الفاتورة:</td>
+                            <td>209</td>
+                        </tr>
+                        <tr>
+                            <td class="label">البائع:</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td class="label">الرقم الضريبي:</td>
+                            <td>311120808600003</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">مسلسل</th>
+                    <th class="description-col">البيان</th>
+                    <th style="width: 10%;">ياردة</th>
+                    <th style="width: 10%;">طاقة</th>
+                    <th style="width: 10%;">الأفرادي</th>
+                    <th style="width: 10%;">مبلغ الضريبة</th>
+                    <th style="width: 12%;">الإجمالي</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td class="description-col">0013 - لمه خيطين</td>
+                    <td>250.00</td>
+                    <td>10.00</td>
+                    <td>2.20</td>
+                    <td>82.50</td>
+                    <td>632.50</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td class="description-col">0016 - لمه ميكاير</td>
+                    <td>425.00</td>
+                    <td>17.00</td>
+                    <td>5.50</td>
+                    <td>350.63</td>
+                    <td>2,688.13</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Summary & Signatures -->
+        <div class="summary-container">
+             <div class="summary-section">
+                <table class="summary-table">
+                    <tbody>
+                        <tr>
+                            <td class="label">إجمالي الكمية</td>
+                            <td class="value">675.00</td>
+                        </tr>
+                        <tr>
+                            <td class="label">المجموع الجزئي فاتورة</td>
+                            <td class="value">2,887.50</td>
+                        </tr>
+                        <tr>
+                            <td class="label">ضريبة القيمة المضافة</td>
+                            <td class="value">433.13</td>
+                        </tr>
+                        <tr>
+                            <td class="label">الصافي</td>
+                            <td class="value">3,320.63</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="total-in-words">
+            المبلغ المطلوب : ثلاثة آلاف وثلاثمائة وعشرون ريال سعودي وثلاثة وستون هللة
+        </div>
+
+        <div class="signatures-section">
+            <div class="signature-box">
+                أعدت من قبل
+                <div class="line"></div>
+            </div>
+            <div class="signature-box">
+                اسم وتوقيع المستلم
+                <div class="line"></div>
+            </div>
+        </div>
+
+        <!-- Footer with Bank Details & QR Code -->
+        <div class="bank-details-footer">
+            <!-- العمود الأوسط (QR Code) -->
+                            <td class="footer-cell qr">
+                                
+                                    <img src="{% url 'generate_qr_code' invoice.id %}" alt="QR Code">
+
+                            </td>
+
+                
