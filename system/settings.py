@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-#SECRET_KEY = 'django-insecure-lac-ag58e767t0%)g7^fx$opj5rso3(1d!owup!p&yh542pd^&'
+SECRET_KEY = 'django-insecure-lac-ag58e767t0%)g7^fx$opj5rso3(1d!owup!p&yh542pd^&'
 
 
 
@@ -31,13 +31,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 #    raise RuntimeError("The SECRET_KEY environment variable is not set.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# SECRET_KEY و DJANGO_SETTINGS_MODULE تعاملنا معهما سابقًا
-SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
-
 DEBUG = True
-# يقرأ المتغيّر ALLOWED_HOSTS
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+
+ALLOWED_HOSTS = []
+
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -99,78 +97,12 @@ WSGI_APPLICATION = 'system.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-#DATABASES = {
-   # 'default': {
-   #     'ENGINE': 'django.db.backends.sqlite3',
-   #     'NAME': BASE_DIR / 'db.sqlite3',
-  #  }
-#}
-
-
-import os
-import dj_database_url
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-# إعدادات قاعدة البيانات الإجبارية
-if 'DATABASE_URL' in os.environ:
-    # إعدادات PostgreSQL للإنتاج
-    DATABASES = {
-        'default': dj_database_url.parse(
-            os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-    # إعدادات إضافية للـ PostgreSQL
-    DATABASES['default']['OPTIONS'] = {
-        'sslmode': 'require',
-    }
-    DATABASES['default']['TEST'] = {
-        'NAME': None,  # استخدام قاعدة بيانات منفصلة للاختبار
-    }
-else:
-    # إعدادات SQLite للتطوير المحلي
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
-
-# إعدادات الأمان للإنتاج
-if 'DATABASE_URL' in os.environ:
-    SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-# تسجيل استعلامات قاعدة البيانات للتشخيص (فقط عند الحاجة)
-if os.environ.get('DEBUG_DB'):
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'verbose': {
-                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-                'style': '{',
-            },
-        },
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'verbose',
-            },
-        },
-        'loggers': {
-            'django.db.backends': {
-                'handlers': ['console'],
-                'level': 'DEBUG',
-                'propagate': False,
-            },
-        },
-    }
-
+}
 
 
 # Password validation
@@ -239,7 +171,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 
