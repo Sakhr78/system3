@@ -222,7 +222,7 @@
                 <div class="details-col" style="text-align: right;">
                     <p><strong>رقم الفاتورة:</strong> {{ invoice.invoice_number }}</p>
                     <p><strong>البائع:</strong></p> <!-- يمكنك إضافة متغير للبائع هنا إذا وجد -->
-                    <p><strong>الرقم الضريبي:</strong> {{ invoice.customer.vat_number|default:"-" }}</p>
+                    <p><strong>الرقم الضريبي:</strong> {{ invoice.company.vat_number|default:"311128669300003" }}</p>
                 </div>
             </div>
 
