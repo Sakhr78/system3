@@ -107,17 +107,71 @@ WSGI_APPLICATION = 'system.wsgi.application'
 #}
 
 
-
 import os
 import dj_database_url
+from pathlib import Path
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# إعدادات قاعدة البيانات الإجبارية
+if 'DATABASE_URL' in os.environ:
+    # إعدادات PostgreSQL للإنتاج
+    DATABASES = {
+        'default': dj_database_url.parse(
+            os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+    # إعدادات إضافية للـ PostgreSQL
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+    }
+    DATABASES['default']['TEST'] = {
+        'NAME': None,  # استخدام قاعدة بيانات منفصلة للاختبار
+    }
+else:
+    # إعدادات SQLite للتطوير المحلي
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+
+# إعدادات الأمان للإنتاج
+if 'DATABASE_URL' in os.environ:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# تسجيل استعلامات قاعدة البيانات للتشخيص (فقط عند الحاجة)
+if os.environ.get('DEBUG_DB'):
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
+            },
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose',
+            },
+        },
+        'loggers': {
+            'django.db.backends': {
+                'handlers': ['console'],
+                'level': 'DEBUG',
+                'propagate': False,
+            },
+        },
+    }
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
