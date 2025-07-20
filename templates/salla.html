@@ -1,0 +1,200 @@
+.top-navbar {
+    background-color:  #C8952E !important;
+}
+
+
+
+
+.s-reviews-header::before, .s-slider-block__title-right::before {
+  content: "";
+  display: inline-block;
+  width: 4px !important;
+  height: 25px !important;
+  position: absolute !important;
+  7top: 50% !important;
+  7transform: translateY(-50%) !important;
+  right: 0 !important;
+  border-radius: 4px !important;
+  background-color: var(--color-text) !important;
+}
+
+
+.s-slider-block__title-right:where([dir="rtl"], [dir="rtl"] *) {
+    padding-right: .5rem !important;
+}
+
+
+
+:root {
+--color-text: #B78660 !important;
+  /* اللون الرئيسي للموقع */
+  --color-primary: #B78660 !important;
+
+  /* اللون العكسي (مثل نص الأزرار) */
+  --color-reverse-primary: #FFFFFF !important;
+}
+
+
+
+
+.s-product-card-image-contain {
+    object-fit: unset !important;
+    border-raduis:none !important;
+}
+
+
+
+
+
+
+
+
+
+/* 1) استدعاء الخط من Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+
+/* 2) ضبط المتغيرات ليسهل تغييرها لاحقًا */
+:root{
+  --font-main: 'Tajawal', sans-serif;      /* نصوص الموقع */
+  --font-heading: 'Tajawal', sans-serif;   /* تلقائيًا) */
+}
+
+/* 3) تطبيق الخط بقوة على جميع العناصر المهمة */
+h1, h2, h3, h4, h5, h6{
+  font-family: var(--font-heading) !important;
+}
+
+body, p, span, a, li, div,
+input, textarea, button{
+  font-family: var(--font-main) !important;
+}
+
+
+/* ضع هذا في أعلى ملف الـ CSS المخصّص لديك */
+body {
+  position: relative;
+  z-index: 0;              /* تأكَّد من أن تكون المحتويات فوق الخلفية */
+  background: transparent; /* لضمان شفافيّة الأقسام */
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;                          /* يملأ كامل الشاشة */
+  background: radial-gradient(
+    circle at center,
+    rgba(183,134,96,0.2) 0%,
+    transparent 40%
+  ) no-repeat center/ cover !important;
+  filter: blur(80px);
+  z-index: -1;                       /* يضعه خلف كل شيء */
+  pointer-events: none;              /* لا يتداخل مع التمرير أو النقر */
+}
+
+
+.s-block--testimonials77::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 200%;
+    height: 50%;
+    background: radial-gradient(circle at center, rgba(183, 134, 96, 0.2) 0%, transparent 70%);
+    transform: translateX(-50%);
+    filter: blur(80px);
+    z-index: 0;
+}
+
+
+.s-block--testimonials, section.s-block{
+    position: relative;
+    overflow: hidden !important;
+}
+
+.top-navbar, .header-btn__icon, .s-cart-summary-total, .sicon-menu:before {
+    color: #b08d57 !important;
+}
+
+
+.header-btn__icon {
+ 
+  
+    border-color: #b08d57 !important;
+    border-color: #b08d57 !important;
+    }
+
+.footer-is-light .store-footer .store-footer__inner {
+    background-color: #B78660 !important;
+
+    margin-top: 0px !important;
+    padding-bottom: 0rem !important;
+}
+
+.mb-6{
+    margin-bottom: .1rem !IMPORTANT;
+}
+
+.s-slider-block__display-all {
+  color:            #b08d57 !important;
+  border:           1px solid #b08d57 !important;
+  padding:          0.4rem 0.8rem !important;  /* مسافة داخلية مريحة */
+  border-radius:    0.25rem !important;       /* حواف دائرية خفيفة */
+  display:          inline-block !important;   /* لضمان احتواء البوردر */
+  transition:       background .2s ease, color .2s ease;
+}
+
+/* تأثير عند المرور بالماوس */
+.s-slider-block__display-all:hover {
+  background-color: rgba(176, 141, 87, 0.1) !important;
+  color:            #b08d57 !important;
+} 
+
+.s-product-card-vertical .s-product-card-wishlist-btn{
+ background-color: #B78660 !important;
+ color: #B78660 !important;
+}
+
+
+.s-button-element {
+    background-color: #B78660 !important;
+
+    border: none;
+     color: #fff !important;
+}
+
+.s-products-slider-card {
+    border: solid 1px #b08d57;
+    border-radius: 5px;
+    padding: 1PX !important;
+}
+
+.s-products-slider-slider 
+.swiper-wrapper {
+    gap: 13px;
+}
+
+
+.s-products-slider-card {
+    width: 100%;
+    max-width: 240px !important;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+
+
+
+#mainnav {
+    background-color: #ffffff !important;
+}
+.s-slider-block__display-all  {
+
+    color: #b08d57 !important;
+}
+ul li, .top-navbar, .header-btn__icon, .s-cart-summary-total, .sicon-menu:before {
+    color: #24272D !important;
+}
+
+div.md\:flex.items-center.justify-between.py-4.container.text-center {
+    background-color: #FFFFFF !important;
+}
