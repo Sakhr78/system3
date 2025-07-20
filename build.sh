@@ -1,36 +1,27 @@
 #!/usr/bin/env bash
-set -e  # إيقاف السكربت لو حصل خطأ
+set -e
 
-echo "1️⃣ تثبيت التبعيات…
-"
+echo "1️⃣ Installing dependencies…"
 pip install -r requirements.txt
 
-echo "2️⃣ إنشاء الميجريشنز تلقائيًا…
-"
+echo "2️⃣ Making migrations for your apps…"
 python manage.py makemigrations --no-input
 
-echo "3️⃣ تطبيق الميجريشنات…
-"
+echo "3️⃣ Applying all migrations…"
 python manage.py migrate --no-input
 
-echo "4️⃣ تعبئة الحسابات الأساسية…
-"
+echo "4️⃣ (Optional) Seeding chart of accounts…"
 python manage.py seed_accounts
 
-echo "5️⃣ إنشاء أو التأكد من وجود superuser…
-"
+echo "5️⃣ Ensuring superuser exists…"
 python manage.py shell <<EOF
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(username='admin').exists():
     User.objects.create_superuser('admin','admin@example.com','1')
-    print("✅ Superuser ‘admin’ created")
-else:
-    print("⚠️ Superuser ‘admin’ already exists")
 EOF
 
-echo "6️⃣ جمع ملفات الثابتة…
-"
+echo "6️⃣ Collecting static files…"
 python manage.py collectstatic --no-input
 
-echo "✅ انتهى بناء المشروع."
+echo "✅ Build script finished."
