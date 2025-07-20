@@ -16,9 +16,6 @@ from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
-# مكتبات دعم العربية
-import arabic_reshaper
-from bidi.algorithm import get_display
 
 # مكتبات Django
 from .models import *
@@ -35,19 +32,7 @@ from django.conf import settings
 from django.http import JsonResponse
 
 
-# دالة معالجة النص العربي
-def process_arabic_text(text):
-    """معالجة النص العربي للطباعة"""
-    if not text:
-        return ''
-    
-    # إعادة ترتيب الحروف العربية
-    reshaped_text = arabic_reshaper.reshape(text)
-    
-    # عكس اتجاه النص
-    bidi_text = get_display(reshaped_text)
-    
-    return bidi_text
+
 
 # دالة تسجيل الخطوط العربية
 def register_arabic_font():
@@ -144,44 +129,6 @@ import os
 from django.conf import settings  
 from reportlab.pdfbase import pdfmetrics  
 from reportlab.pdfbase.ttfonts import TTFont  
-
-def register_arabic_font():  
-    """  
-    مثال لتسجيل الخط العربي باستخدام ReportLab.  
-    يجب توفير مسار الخط المناسب.  
-    """  
-    try:  
-        # مسارات الخطوط باستخدام STATIC/FONT  
-        arabic_font_path = os.path.join(settings.BASE_DIR, 'static', 'fonts', 'NotoNaskhArabic-Regular.ttf')  
-        arabic_bold_font_path = os.path.join(settings.BASE_DIR, 'static', 'fonts', 'NotoNaskhArabic-Bold.ttf')  
-
-        # تسجيل الخطوط  
-        pdfmetrics.registerFont(TTFont('Arabic', arabic_font_path))  
-        pdfmetrics.registerFont(TTFont('Arabic-Bold', arabic_bold_font_path))  
-    except Exception as e:  
-        # التعامل مع حالة الخطأ  
-        print(f"Error registering font: {e}")
-
-
-import arabic_reshaper
-from bidi.algorithm import get_display
-
-def process_arabic_text(text):
-    """
-    تعيد الدالة النص العربي بعد إعادة تشكيله وتصحيحه ليظهر بشكل مناسب.
-    - تستخدم مكتبة arabic_reshaper لإعادة تشكيل الحروف العربية.
-    - تستخدم مكتبة python-bidi لضبط اتجاه النص بحيث يُعرض من اليمين إلى اليسار.
-    """
-    try:
-        # إعادة تشكيل النص العربي
-        reshaped_text = arabic_reshaper.reshape(text)
-        # تعديل اتجاه النص ليصبح من اليمين إلى اليسار
-        bidi_text = get_display(reshaped_text)
-        return bidi_text
-    except Exception as e:
-        # في حال حدوث خطأ يمكن طباعة رسالة وإرجاع النص الأصلي
-        print(f"Error processing Arabic text: {e}")
-        return text
 
 
 import io
