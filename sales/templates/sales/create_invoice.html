@@ -4,59 +4,41 @@
 {% block content %}
 
 <style>
-  /* Ensure modal backdrop doesn't interfere if issues arise (though usually not needed) */
-  /* .modal-backdrop { display: none !important; } */
-
-  /* Tom Select Bootstrap 5 Theme adjustments (Optional but recommended) */
+  /* تنسيقات Tom Select المخصصة */
   .ts-control {
-    padding: 0.375rem 0.75rem; /* Match Bootstrap input padding */
+    padding: 0.375rem 0.75rem; /* مطابقة هوامش Bootstrap */
     line-height: 1.5;
-    min-height: calc(1.5em + 0.75rem + 2px); /* Match Bootstrap input height */
-    border-color: #ced4da; /* Match Bootstrap border */
+    min-height: calc(1.5em + 0.75rem + 2px); /* مطابقة ارتفاع حقول Bootstrap */
+    border-color: #ced4da; /* مطابقة لون حدود Bootstrap */
   }
- 
-  /* Fix potential overlap with add/remove buttons if Tom Select is used in input-groups */
+  /* إصلاحات لـ Tom Select داخل input-group */
   .input-group .ts-wrapper.form-control {
       position: relative;
       flex: 1 1 auto;
       width: 1%;
       min-width: 0;
   }
-  .ts-wrapper.single .ts-control:after {
-      border-color: #333 transparent transparent; /* Adjust dropdown arrow color if needed */
-  }
   .ts-wrapper.form-control {
-      border: none; /* Remove Tom Select's default border when it's inside .form-control */
+      border: none;
       box-shadow: none;
       padding: 0;
   }
-  .ts-control, .ts-wrapper.single.form-control .ts-control {
-      /* Ensure Tom Select takes the height of the Bootstrap input */
-  }
   .table-responsive {
-    overflow: visible !important;
+    overflow: visible !important; /* مهم لظهور القوائم المنسدلة بشكل صحيح */
     position: relative;
   }
-  
   .ts-dropdown {
-    position: absolute !important;
-    z-index: 9999 !important;
-    max-height: 300px;
-    overflow-y: auto;
-    background-color: white;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    position: absolute !important; /* ضمان ظهور القائمة فوق العناصر الأخرى */
+    z-index: 9999 !important; /* قيمة z-index عالية */
   }
-
-  /* Ensure modal z-index is high enough if needed */
+  /* التأكد من أن الـ Modal له z-index كافي */
   .modal {
-    z-index: 1051 !important; /* Bootstrap default is 1050, Tom Select dropdown is 1060 */
+    z-index: 1051 !important; /* أعلى قليلاً من z-index الافتراضي لـ Bootstrap dropdown */
   }
-
 </style>
 
-<!-- Include Tom Select CSS -->
+<!-- تضمين ملفات CSS الخارجية -->
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -65,93 +47,64 @@
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="#">المحاسبة</a></li>
-      <li class="breadcrumb-item"><a href="#">الفواتير</a></li>
-      <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+      <li class="breadcrumb-item"><a href="#">فواتير المبيعات</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ title|default:"إنشاء فاتورة مبيعات" }}</li>
     </ol>
   </nav>
 
-
-  {% if form.errors or formset.errors %}
-  <div class="alert alert-danger">
-    {% if form.errors %}
-      <strong>أخطاء في بيانات الفاتورة:</strong>
-      <ul>
-        {% for field, errors in form.errors.items %}
-          <li>{{ field }}: {{ errors|striptags }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-    {% if formset.errors %}
-       <strong>أخطاء في بنود الفاتورة:</strong>
-       <ul>
-        {% for error_dict in formset.errors %}
-            {% for field, errors in error_dict.items %}
-                <li>{{ field }}: {{ errors|striptags }}</li>
-            {% endfor %}
-        {% endfor %}
-       </ul>
-       {% if formset.non_form_errors %}
-           {{ formset.non_form_errors }}
-       {% endif %}
-    {% endif %}
-  </div>
+  <!-- عرض رسائل النظام (إذا وجدت) -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
   {% endif %}
 
-
-  <!-- عنوان الصفحة مع الأزرار العلوية -->
+  <!-- الفورم الرئيسي لإنشاء الفاتورة -->
   <form id="invoiceForm" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <!-- العنوان الرئيسي للصفحة -->
       <h3 class="mb-0">
         فاتورة مبيعات
-        <!-- شارة الحالة (يمكن تغييرها حسب منطق الحالة الفعلية: مسودة، معتمدة ...) -->
+        <!-- شارة الحالة -->
         <span class="badge bg-warning ms-2" style="font-size: 0.8rem;">مسودة</span>
       </h3>
-
-      <!-- أزرار الحركة -->
       <div>
         <button type="submit" class="btn btn-primary me-2">
           <i class="fas fa-save me-1"></i> حفظ
         </button>
-        <a href="#" class="btn btn-secondary"> {# Consider adding a real cancel URL #}
+        <a href="#" class="btn btn-secondary">
           <i class="fas fa-times me-1"></i> إلغاء
         </a>
       </div>
     </div>
 
-    <!-- تقسيم الصفحة إلى قسمين رئيسيين: بيانات الفاتورة/ملخص الحسابات (8 أعمدة + 4 أعمدة) -->
+    <!-- القسم العلوي: بيانات الفاتورة وملخص الحسابات -->
     <div class="row">
       <!-- بطاقة بيانات الفاتورة الأساسية -->
       <div class="col-md-8">
         <div class="card mb-4">
-
           <div class="card-body">
             <!-- سطر الحقول الأول -->
-            <div class="row  mb-3">
-
+            <div class="row mb-3">
               <div class="col-md-6">
                 <label for="{{ form.customer.id_for_label }}" class="form-label">العميل</label>
                 <div class="input-group">
-                    {{ form.customer }} {# This will be a standard select initially #}
-                    <button type="button"
-                            class="btn btn-outline-primary"
-                            data-bs-toggle="modal"
-                            data-bs-target="#customerModal">
+                    {{ form.customer }} {# سيتم تحويله إلى Tom Select #}
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#customerModal">
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>
                 {% if form.customer.errors %}<div class="invalid-feedback d-block">{{ form.customer.errors|striptags }}</div>{% endif %}
               </div>
-
               <div class="col-md-6">
                 <label for="{{ form.invoice_number.id_for_label }}" class="form-label">رقم الفاتورة</label>
                 {{ form.invoice_number }}
                 {% if form.invoice_number.errors %}<div class="invalid-feedback d-block">{{ form.invoice_number.errors|striptags }}</div>{% endif %}
               </div>
-
             </div>
-
 
             <!-- سطر الحقول الثاني -->
             <div class="row g-3 mb-3">
@@ -174,13 +127,11 @@
                 {{ form.discount_percentage }}
                  {% if form.discount_percentage.errors %}<div class="invalid-feedback d-block">{{ form.discount_percentage.errors|striptags }}</div>{% endif %}
               </div>
-
               <div class="col-md-4">
                 <label for="{{ form.notes.id_for_label }}" class="form-label">الملاحظات</label>
                 {{ form.notes }}
                  {% if form.notes.errors %}<div class="invalid-feedback d-block">{{ form.notes.errors|striptags }}</div>{% endif %}
               </div>
-
               <div class="col-md-4">
                 <label for="{{ form.status.id_for_label }}" class="form-label">حالة الفاتورة</label>
                 {{ form.status }}
@@ -188,18 +139,14 @@
               </div>
             </div>
 
-
-            <!-- الحقول المالية المخفية (وغيرها) -->
+            <!-- الحقول المالية المخفية -->
             {{ form.invoice_type }}
-            {{ form.return_reason }}
-            {{ form.original_invoice }}
+            {{ form.tax_rate.as_hidden }}
             {{ form.subtotal_before_discount.as_hidden }}
             {{ form.discount.as_hidden }}
             {{ form.subtotal_before_tax.as_hidden }}
-            {{ form.tax_rate.as_hidden }}
             {{ form.tax_amount.as_hidden }}
             {{ form.total_amount.as_hidden }}
-            {{ form.qr_code.as_hidden }} {# Assuming QR is generated server-side or not needed here #}
           </div>
         </div>
       </div>
@@ -212,16 +159,10 @@
           </div>
           <div class="card-body">
             <table class="table table-sm mb-0">
-              <tbody> {# Use tbody for semantic correctness #}
+              <tbody>
                 <tr>
                   <th>الإجمالي قبل الخصم</th>
                   <td id="total-value" class="text-end fw-bold">0.00 ر.س</td>
-                </tr>
-                <tr>
-                  <th>نسبة الخصم (%)</th>
-                  <td id="discount-percentage-display" class="text-end">
-                    {{ form.discount_percentage.value|default:"0" }}%
-                  </td>
                 </tr>
                 <tr>
                   <th>قيمة الخصم</th>
@@ -232,17 +173,11 @@
                   <td id="net-value" class="text-end fw-bold">0.00 ر.س</td>
                 </tr>
                 <tr>
-                  <th>نسبة الضريبة (%)</th>
-                  <td id="tax-percentage" class="text-end">
-                    {{ form.tax_rate.value|default:"15" }}% {# Assuming fixed tax rate for display #}
-                  </td>
-                </tr>
-                <tr>
-                  <th>قيمة الضريبة</th>
+                  <th>ضريبة ({{ form.tax_rate.value|default:"15" }}%)</th>
                   <td id="tax-value" class="text-end">0.00 ر.س</td>
                 </tr>
                 <tr class="bg-light">
-                  <th class="fs-5">الإجمالي النهائي</th>
+                  <th class="fs-5">الصافي</th>
                   <td id="invoice-value" class="text-end fs-5 fw-bolder text-primary">0.00 ر.س</td>
                 </tr>
               </tbody>
@@ -259,41 +194,46 @@
       </div>
       <div class="card-body">
         {{ formset.management_form }}
-        <div class="table-responsive"> {# Added for better handling on small screens #}
+        <div class="table-responsive">
           <table class="table table-bordered align-middle">
-            <thead class="table-light"> {# Removed custom background color, using Bootstrap class #}
+            <thead class="table-light">
               <tr>
-                <th style="width: 30%;">المنتج</th> {# Increased width for Tom Select #}
-                <th style="width: 15%;">السعر</th>
-                <th style="width: 10%;">الكمية</th>
+                <th style="width: 25%;">البيان (المنتج)</th>
+                <th style="width: 15%;">ياردة (محسوب)</th> {# العمود الجديد لإظهار الطاقة بالوحدة الأساسية #}
+                <th style="width: 10%;">الطاقة</th>
                 <th style="width: 15%;">الوحدة</th>
-                <th style="width: 20%;">الاجمالي</th>
-                <th style="width: 10%;" class="text-center">الإجراء</th>
+                <th style="width: 15%;">الأفرادي (سعر الوحدة الأساسية)</th> {# تعديل الاسم للتوضيح #}
+                <th style="width: 15%;">الإجمالي</th>
+                <th style="width: 5%;" class="text-center">إجراء</th>
               </tr>
             </thead>
             <tbody id="invoice-items-tbody">
+              {# عرض البنود الموجودة مسبقاً #}
               {% for item_form in formset %}
                 <tr class="invoice-item">
-                  {{ item_form.id }} {# Important for inline formsets #}
+                  {{ item_form.id }} {# ضروري لـ inline formsets #}
                   <td>
-                      {{ item_form.product }} {# This select will be enhanced by Tom Select #}
+                      {{ item_form.product }} {# سيتم تحويله بواسطة Tom Select #}
                       {% if item_form.product.errors %}<div class="invalid-feedback d-block">{{ item_form.product.errors|striptags }}</div>{% endif %}
                   </td>
-                  <td>
-                      {{ item_form.unit_price }}
-                      {% if item_form.unit_price.errors %}<div class="invalid-feedback d-block">{{ item_form.unit_price.errors|striptags }}</div>{% endif %}
-                  </td>
+                  {# عرض الطاقة المحسوبة بالوحدة الأساسية #}
+                  <td class="item-base-quantity text-end fw-bold">0.00</td>
                   <td>
                       {{ item_form.quantity }}
                       {% if item_form.quantity.errors %}<div class="invalid-feedback d-block">{{ item_form.quantity.errors|striptags }}</div>{% endif %}
                   </td>
                   <td>
-                      {{ item_form.unit }}
+                      {{ item_form.unit }} {# سيتم تحديث خياراته ديناميكياً #}
                       {% if item_form.unit.errors %}<div class="invalid-feedback d-block">{{ item_form.unit.errors|striptags }}</div>{% endif %}
                   </td>
+                  <td>
+                      {{ item_form.unit_price }} {# سعر الوحدة الأساسية #}
+                      {% if item_form.unit_price.errors %}<div class="invalid-feedback d-block">{{ item_form.unit_price.errors|striptags }}</div>{% endif %}
+                  </td>
+                  {# إجمالي السطر = الطاقة المحسوبة بالياردة * سعر الأفرادي #}
                   <td class="item-total text-end fw-bold">0.00 ر.س</td>
                   <td class="text-center">
-                    {{ item_form.DELETE }} {# Checkbox for deletion #}
+                    {{ item_form.DELETE }} {# خانة حذف البند #}
                     <button type="button" class="btn btn-danger btn-sm remove-item" title="حذف السطر">
                       <i class="fas fa-trash-alt"></i>
                     </button>
@@ -305,32 +245,31 @@
         </div>
 
         <!-- زر إضافة صف جديد -->
-        <div class="d-flex justify-content-start mt-3"> {# Changed alignment #}
-          <button id="add-row-button" type="button" class="btn btn-success">
-            <i class="fas fa-plus me-1"></i> إضافة بند
-          </button>
-        </div>
+        <button id="add-row-button" type="button" class="btn btn-success mt-3">
+          <i class="fas fa-plus me-1"></i> إضافة بند
+        </button>
 
-        <!-- قالب النموذج الفارغ لإضافة صفوف جديدة (hidden template) -->
+        <!-- قالب النموذج الفارغ لإضافة صفوف جديدة (مخفي) -->
         <table class="d-none">
-          <tbody id="empty-form-template"> {# Changed ID for clarity #}
-            <tr id="empty-form-row"> {# Keep this ID if JS relies on it, otherwise can be removed #}
-              {{ formset.empty_form.id }}
+          <tbody id="empty-form-template">
+            <tr class="invoice-item">
+              {{ formset.empty_form.id }} {# معرف النموذج الفارغ #}
               <td>
-                  {{ formset.empty_form.product }} {# This select will be enhanced #}
+                  {{ formset.empty_form.product }} {# سيتم تهيئته كـ Tom Select #}
               </td>
-              <td>
-                  {{ formset.empty_form.unit_price }}
-              </td>
+              <td class="item-base-quantity text-end fw-bold">0.00</td> {# مكان عرض الطاقة المحسوبة #}
               <td>
                   {{ formset.empty_form.quantity }}
               </td>
               <td>
-                  {{ formset.empty_form.unit }}
+                  {{ formset.empty_form.unit }} {# سيتم ملؤه ديناميكياً #}
               </td>
-              <td class="item-total text-end fw-bold">0.00 ر.س</td>
+              <td>
+                  {{ formset.empty_form.unit_price }} {# سعر الوحدة الأساسية #}
+              </td>
+              <td class="item-total text-end fw-bold">0.00 ر.س</td> {# مكان عرض إجمالي السطر #}
               <td class="text-center">
-                 {{ formset.empty_form.DELETE }}
+                {{ formset.empty_form.DELETE }} {# خانة الحذف #}
                  <button type="button" class="btn btn-danger btn-sm remove-item" title="حذف السطر">
                    <i class="fas fa-trash-alt"></i>
                  </button>
@@ -340,14 +279,10 @@
         </table>
       </div>
     </div>
+  </form>
+</div>
 
-  </form> <!-- نهاية الفورم -->
-
-</div><!-- /container-xxl -->
-
-
-
-<!-- Modal إضافة عميل -->
+<!-- Modal إضافة عميل (يمكنك استبدال المحتوى بنموذج إضافة العميل الخاص بك) -->
 <div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -355,16 +290,16 @@
         <h5 class="modal-title" id="customerModalLabel">إضافة عميل جديد</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      {# Use a separate form tag for the modal #}
-      <form id="customerForm" method="post" action="{% url 'add_customer' %}">
+      {# استخدم فورماً منفصلاً لإضافة العميل #}
+      <form id="customerForm" method="post" action="{% url 'add_customer' %}"> {# تأكد من أن 'add_customer' هو اسم الـ URL الصحيح #}
         {% csrf_token %}
         <div class="modal-body">
-          {# Display non-field errors for the customer form if any #}
+          {# عرض الأخطاء العامة لنموذج العميل إذا وجدت #}
           {% if customer_form.non_field_errors %}
             <div class="alert alert-danger">{{ customer_form.non_field_errors }}</div>
           {% endif %}
 
-          <!-- الصف الأول -->
+          <!-- حقول نموذج العميل -->
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="{{ customer_form.name.id_for_label }}" class="form-label">{{ customer_form.name.label }}</label>
@@ -377,8 +312,6 @@
               {% if customer_form.phone.errors %}<div class="invalid-feedback d-block">{{ customer_form.phone.errors|striptags }}</div>{% endif %}
             </div>
           </div>
-
-          <!-- الصف الثاني -->
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="{{ customer_form.email.id_for_label }}" class="form-label">{{ customer_form.email.label }}</label>
@@ -391,44 +324,7 @@
               {% if customer_form.address_line.errors %}<div class="invalid-feedback d-block">{{ customer_form.address_line.errors|striptags }}</div>{% endif %}
             </div>
           </div>
-
-          <!-- الصف الثالث -->
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label for="{{ customer_form.city.id_for_label }}" class="form-label">{{ customer_form.city.label }}</label>
-              {{ customer_form.city }}
-              {% if customer_form.city.errors %}<div class="invalid-feedback d-block">{{ customer_form.city.errors|striptags }}</div>{% endif %}
-            </div>
-            <div class="col-md-6">
-              <label for="{{ customer_form.country.id_for_label }}" class="form-label">{{ customer_form.country.label }}</label>
-              {{ customer_form.country }}
-              {% if customer_form.country.errors %}<div class="invalid-feedback d-block">{{ customer_form.country.errors|striptags }}</div>{% endif %}
-            </div>
-          </div>
-
-          <!-- الصف الرابع -->
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label for="{{ customer_form.vat_number.id_for_label }}" class="form-label">{{ customer_form.vat_number.label }}</label>
-              {{ customer_form.vat_number }}
-              {% if customer_form.vat_number.errors %}<div class="invalid-feedback d-block">{{ customer_form.vat_number.errors|striptags }}</div>{% endif %}
-            </div>
-            <div class="col-md-6">
-              <label for="{{ customer_form.cr_number.id_for_label }}" class="form-label">{{ customer_form.cr_number.label }}</label>
-              {{ customer_form.cr_number }}
-              {% if customer_form.cr_number.errors %}<div class="invalid-feedback d-block">{{ customer_form.cr_number.errors|striptags }}</div>{% endif %}
-            </div>
-          </div>
-
-          <!-- الصف الخامس -->
-          <div class="row mb-3">
-            <div class="col-md-12">
-              <label for="{{ customer_form.notes.id_for_label }}" class="form-label">{{ customer_form.notes.label }}</label>
-              {{ customer_form.notes }}
-              {% if customer_form.notes.errors %}<div class="invalid-feedback d-block">{{ customer_form.notes.errors|striptags }}</div>{% endif %}
-            </div>
-          </div>
-
+          <!-- ... أضف المزيد من حقول العميل حسب الحاجة ... -->
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
@@ -439,339 +335,276 @@
   </div>
 </div>
 
-
-<!-- Include Tom Select JS -->
+<!-- تضمين ملف JavaScript الخاص بـ Tom Select -->
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 
-<!-- Main JavaScript Block -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // 1. استلام بيانات المنتجات والوحدات والأسعار من Django View
+    // تأكد من تمرير هذه المتغيرات في سياق Django context
+    const productPrices = JSON.parse('{{ product_prices_json|escapejs }}');
+    const productData = JSON.parse('{{ product_data_json|escapejs }}');
 
-    // --- Tom Select Initialization ---
-    let tomSelectInstances = {}; // Store instances to manage them
+    const invoiceItemsTbody = document.getElementById('invoice-items-tbody');
+    const mainInvoiceForm = document.getElementById('invoiceForm');
 
+    // 2. وظائف مساعدة ومنطق الحساب
+    // تهيئة Tom Select لأي حقل select للمنتجات
     function initializeProductSelect(element) {
-        if (element && !element.tomselect) { // Check if not already initialized
-            const instanceId = element.id || element.name; // Use ID or Name as key
-            tomSelectInstances[instanceId] = new TomSelect(element, {
-                create: false, // Don't allow creating new products via the dropdown
-                sortField: { field: "text", direction: "asc" },
+        if (element && !element.tomselect) { // تجنب التهيئة المتكررة
+            new TomSelect(element, {
+                create: false, // لا تسمح بإنشاء منتجات جديدة من القائمة
+                sortField: { field: "text", direction: "asc" }, // فرز أبجدي
                 placeholder: "ابحث أو اختر منتج...",
-                // Add Bootstrap 5 theme class if not automatically applied by CSS file
-                // dropdownClass: 'dropdown-menu ts-dropdown',
-                // controlClass: 'form-control ts-control', // Already handled by wrapper
-                // itemClass: 'item',
-                // optionClass: 'dropdown-item',
-                // Add more configuration as needed
-                // render: { // Example custom rendering if needed
-                //     option: function(data, escape) {
-                //         return `<div class="dropdown-item">${escape(data.text)}</div>`;
-                //     },
-                //     item: function(data, escape) {
-                //         return `<div class="item">${escape(data.text)}</div>`;
-                //     }
-                // }
+                // يمكنك إضافة خيارات أخرى هنا إذا لزم الأمر
             });
-            // console.log('TomSelect initialized for:', instanceId);
         }
     }
 
-    // Initialize for existing product selects on page load
-    document.querySelectorAll('#invoice-items-tbody select[name$="-product"]').forEach(selectElement => {
-        initializeProductSelect(selectElement);
-    });
-    // --- End Tom Select Initialization ---
-
-
-    // ==================================================
-    // Invoice Calculation Logic
-    // ==================================================
-    const productPrices = {{ product_prices|safe }};
-    const productUnits = {{ product_units|safe }};
-    const conversionUnits = {{ conversion_units|safe }};
-    const invoiceItemsTbody = document.getElementById('invoice-items-tbody');
-    const mainInvoiceForm = document.getElementById('invoiceForm'); // Reference to the main form
-
-    // --- Helper Functions ---
-    function getNumericValue(element, defaultValue = 0) {
-        if (!element) return defaultValue;
-        const value = parseFloat(element.value);
-        return isNaN(value) ? defaultValue : value;
-    }
-
-    function formatCurrency(value) {
-        return (value ? value.toFixed(2) : '0.00') + " ر.س";
-    }
-
-    // --- Update Price based on Product/Unit Selection ---
-    function updateUnitPriceForRow(row) {
+    // تحديث خيارات الوحدات في حقل select بناءً على المنتج المختار
+    function updateUnitOptions(row) {
         const productSelect = row.querySelector('select[name$="-product"]');
         const unitSelect = row.querySelector('select[name$="-unit"]');
-        const unitPriceInput = row.querySelector('input[name$="-unit_price"]');
+        const productId = productSelect.value;
 
-        if (!productSelect || !unitSelect || !unitPriceInput) return;
+        // إزالة الخيارات الحالية
+        while (unitSelect.options.length > 1) { // الاحتفاظ بالخيار الأول (إذا كان هناك placeholder)
+            unitSelect.remove(1);
+        }
+
+        if (productId && productData[productId]) {
+            const product = productData[productId];
+            // إضافة الوحدة الأساسية
+            if (product.base_unit) {
+                const option = new Option(product.base_unit.name, product.base_unit.id);
+                unitSelect.add(option);
+            }
+            // إضافة وحدات التحويل
+            product.conversions.forEach(conv => {
+                const option = new Option(conv.name, conv.id);
+                unitSelect.add(option);
+            });
+        }
+        // تحديث حسابات الصف بعد تغيير الوحدة
+        updateRowCalculations(row);
+    }
+
+    // حساب كمية الياردة والإجمالي لكل صف
+    function updateRowCalculations(row) {
+        const productSelect = row.querySelector('select[name$="-product"]');
+        const unitSelect = row.querySelector('select[name$="-unit"]');
+        const quantityInput = row.querySelector('input[name$="-quantity"]');
+        const unitPriceInput = row.querySelector('input[name$="-unit_price"]'); // سعر الوحدة الأساسية (الأفرادي)
+        const baseQuantityCell = row.querySelector('.item-base-quantity');
+        const itemTotalCell = row.querySelector('.item-total');
 
         const productId = productSelect.value;
-        const basePrice = parseFloat(productPrices[productId] || "0.00");
-        // const baseUnitAbbr = productUnits[productId] || ""; // Not directly used here
+        if (!productId) return;
 
-        let unitPriceValue = basePrice;
-        const selectedUnitValue = unitSelect.value; // This could be base unit ID or conversion ID
+        const basePrice = parseFloat(productPrices[productId] || 0); // سعر الياردة
 
-        // Check if a conversion unit is selected
-        if (selectedUnitValue && conversionUnits[selectedUnitValue]) {
-            const convData = conversionUnits[selectedUnitValue];
-            unitPriceValue = basePrice * parseFloat(convData.factor || 1);
-        }
-        // else: it's the base unit or no unit selected, use basePrice
-
-        // Update the unit price field only if it's not currently focused by the user
+        // تحديث سعر الأفرادي إذا لم يكن المستخدم يعدله حالياً
         if (document.activeElement !== unitPriceInput) {
-            unitPriceInput.value = unitPriceValue.toFixed(2);
+            unitPriceInput.value = basePrice.toFixed(2);
         }
+
+        const quantity = parseFloat(quantityInput.value) || 0; // الطاقة المدخلة (مثلاً: طاقات)
+
+        let conversionFactor = 1.0;
+        const selectedUnitId = unitSelect.value;
+        if (selectedUnitId && productData[productId] && productData[productId].conversions) {
+            // البحث عن عامل التحويل للوحدة المختارة
+            const conv = productData[productId].conversions.find(c => c.id == selectedUnitId);
+            if (conv) {
+                conversionFactor = parseFloat(conv.factor);
+            }
+        }
+
+        // حساب الطاقة بالوحدة الأساسية (الياردة)
+        const calculatedBaseQuantity = quantity * conversionFactor;
+        baseQuantityCell.textContent = calculatedBaseQuantity.toFixed(2);
+
+        // حساب إجمالي السطر (الطاقة بالياردة * سعر الياردة)
+        const priceToUse = parseFloat(unitPriceInput.value) || basePrice; // استخدام السعر المدخل أو السعر الأساسي
+        const total = calculatedBaseQuantity * priceToUse;
+        itemTotalCell.textContent = total.toFixed(2) + " ر.س";
+
+        // تحديث الملخص العام للفاتورة
+        updateInvoiceSummary();
     }
 
-    // --- Update Invoice Summary ---
-    function updateSummary() {
-        let subtotalBeforeDiscount = 0;
-
-        // Calculate item totals and subtotal
-        invoiceItemsTbody.querySelectorAll('tr.invoice-item').forEach(function(row) {
-            // Skip rows marked for deletion
-            const deleteCheckbox = row.querySelector('input[name$="-DELETE"]');
-            if (deleteCheckbox && deleteCheckbox.checked) {
-                row.style.display = 'none'; // Hide visually
-                row.querySelector('.item-total').textContent = formatCurrency(0);
-                return; // Skip calculation for this row
-            } else {
-                 row.style.display = ''; // Ensure it's visible if unchecked
-            }
-
-            const priceInput = row.querySelector('input[name$="-unit_price"]');
-            const qtyInput = row.querySelector('input[name$="-quantity"]');
-            const itemTotalCell = row.querySelector('.item-total');
-
-            const quantity = getNumericValue(qtyInput, 0);
-            const price = getNumericValue(priceInput, 0);
-            const total = quantity * price;
-
-            if (itemTotalCell) {
-                itemTotalCell.textContent = formatCurrency(total);
-            }
-            subtotalBeforeDiscount += total;
+    // تحديث الملخص المالي للفاتورة بالكامل
+    function updateInvoiceSummary() {
+        let subtotal = 0;
+        // حساب الإجمالي الفرعي لجميع البنود المرئية
+        invoiceItemsTbody.querySelectorAll('tr.invoice-item:not([style*="display: none"])').forEach(row => {
+            const totalText = row.querySelector('.item-total').textContent;
+            subtotal += parseFloat(totalText) || 0;
         });
 
-        // Get discount percentage from the form field
-        const discountInput = mainInvoiceForm.querySelector('input[name="{{ form.discount_percentage.html_name }}"]');
-        const discountPercentage = getNumericValue(discountInput, 0);
+        // الحصول على الخصم والضريبة من الحقول الرئيسية
+        const discountPercentage = parseFloat(mainInvoiceForm.querySelector('[name="discount_percentage"]').value) || 0;
+        const taxRate = parseFloat(mainInvoiceForm.querySelector('[name="tax_rate"]').value) || 15; // القيمة الافتراضية 15%
 
-        // Calculate other values
-        const discountValue = subtotalBeforeDiscount * discountPercentage / 100;
-        const subtotalAfterTax = subtotalBeforeDiscount - discountValue; // Renamed for clarity
-        const taxRate = parseFloat(mainInvoiceForm.querySelector('input[name="{{ form.tax_rate.html_name }}"]').value) || 15; // Get actual rate
-        const taxValue = subtotalAfterTax * taxRate / 100;
-        const finalTotal = subtotalAfterTax + taxValue;
+        // حساب القيم المالية
+        const discountValue = subtotal * (discountPercentage / 100);
+        const subtotalAfterDiscount = subtotal - discountValue;
+        const taxValue = subtotalAfterDiscount * (taxRate / 100);
+        const finalTotal = subtotalAfterDiscount + taxValue;
 
-        // Update summary display table
-        document.getElementById('total-value').textContent = formatCurrency(subtotalBeforeDiscount);
-        document.getElementById('discount-percentage-display').textContent = discountPercentage.toFixed(2) + "%";
-        document.getElementById('discount-value').textContent = formatCurrency(discountValue);
-        document.getElementById('net-value').textContent = formatCurrency(subtotalAfterTax);
-        document.getElementById('tax-percentage').textContent = taxRate.toFixed(2) + "%";
-        document.getElementById('tax-value').textContent = formatCurrency(taxValue);
-        document.getElementById('invoice-value').textContent = formatCurrency(finalTotal);
+        // تحديث عرض الملخص
+        document.getElementById('total-value').textContent = subtotal.toFixed(2) + " ر.س";
+        document.getElementById('discount-value').textContent = discountValue.toFixed(2) + " ر.س";
+        document.getElementById('net-value').textContent = subtotalAfterDiscount.toFixed(2) + " ر.س";
+        document.getElementById('tax-value').textContent = taxValue.toFixed(2) + " ر.س";
+        document.getElementById('invoice-value').textContent = finalTotal.toFixed(2) + " ر.س";
 
-        // Update hidden form fields for submission
-        mainInvoiceForm.querySelector('input[name="{{ form.subtotal_before_discount.html_name }}"]').value = subtotalBeforeDiscount.toFixed(2);
-        mainInvoiceForm.querySelector('input[name="{{ form.discount.html_name }}"]').value = discountValue.toFixed(2);
-        mainInvoiceForm.querySelector('input[name="{{ form.subtotal_before_tax.html_name }}"]').value = subtotalAfterTax.toFixed(2);
-        mainInvoiceForm.querySelector('input[name="{{ form.tax_amount.html_name }}"]').value = taxValue.toFixed(2);
-        mainInvoiceForm.querySelector('input[name="{{ form.total_amount.html_name }}"]').value = finalTotal.toFixed(2);
+        // تحديث الحقول المخفية لإرسالها مع الفورم
+        mainInvoiceForm.querySelector('[name="subtotal_before_discount"]').value = subtotal.toFixed(2);
+        mainInvoiceForm.querySelector('[name="discount"]').value = discountValue.toFixed(2);
+        mainInvoiceForm.querySelector('[name="subtotal_before_tax"]').value = subtotalAfterDiscount.toFixed(2);
+        mainInvoiceForm.querySelector('[name="tax_amount"]').value = taxValue.toFixed(2);
+        mainInvoiceForm.querySelector('[name="total_amount"]').value = finalTotal.toFixed(2);
     }
 
-    // --- Event Listeners using Delegation ---
-    invoiceItemsTbody.addEventListener('change', function(event) {
-        const target = event.target;
-        const row = target.closest('tr.invoice-item');
+    // 3. ربط الأحداث (Event Listeners)
+    // استماع لتغييرات في حقول الصف (منتج، وحدة، كمية، سعر)
+    invoiceItemsTbody.addEventListener('change', function(e) {
+        const row = e.target.closest('tr.invoice-item');
         if (!row) return;
-
-        // Product or Unit changed -> Update price and recalculate summary
-        if (target.matches('select[name$="-product"]') || target.matches('select[name$="-unit"]')) {
-            updateUnitPriceForRow(row);
-            updateSummary();
+        // إذا تغير المنتج، قم بتحديث خيارات الوحدات
+        if (e.target.matches('select[name$="-product"]')) {
+            updateUnitOptions(row);
         }
-        // Delete checkbox changed -> Recalculate summary
-        else if (target.matches('input[name$="-DELETE"]')) {
-             updateSummary();
-        }
+        // إعادة حساب قيم الصف بعد أي تغيير
+        updateRowCalculations(row);
     });
 
-    invoiceItemsTbody.addEventListener('input', function(event) {
-        const target = event.target;
-        const row = target.closest('tr.invoice-item');
+    // استماع لإدخال البيانات في حقول الطاقة والسعر
+    invoiceItemsTbody.addEventListener('input', function(e) {
+        const row = e.target.closest('tr.invoice-item');
         if (!row) return;
-
-        // Quantity or Price manually changed -> Recalculate summary
-        if (target.matches('input[name$="-quantity"]') || target.matches('input[name$="-unit_price"]')) {
-            updateSummary();
+        // فقط الحقول التي تؤثر مباشرة على الحسابات
+        if (e.target.matches('input[name$="-quantity"], input[name$="-unit_price"]')) {
+            updateRowCalculations(row);
         }
     });
 
-    // Listener for main form discount percentage
-    const discountInputEl = mainInvoiceForm.querySelector('input[name="{{ form.discount_percentage.html_name }}"]');
-    if (discountInputEl) {
-        discountInputEl.addEventListener('input', updateSummary);
-    }
+    // استماع لتغيير نسبة الخصم لتحديث الملخص العام
+    mainInvoiceForm.querySelector('[name="discount_percentage"]').addEventListener('input', updateInvoiceSummary);
 
-    // Listener for remove button clicks (delegated)
-    invoiceItemsTbody.addEventListener('click', function(event) {
-        if (event.target.closest('.remove-item')) {
-            const button = event.target.closest('.remove-item');
-            const row = button.closest('tr.invoice-item');
-            if (row) {
-                handleRemoveRow(row);
-            }
-        }
-    });
-
-
-    // --- Add Row Functionality ---
-    document.getElementById("add-row-button").addEventListener("click", function(e) {
-        e.preventDefault();
-        const templateHolder = document.getElementById("empty-form-template");
-        if (!templateHolder) {
-            console.error("Empty form template not found!");
+    // التعامل مع زر إضافة بند جديد
+    document.getElementById("add-row-button").addEventListener("click", function() {
+        const formsetPrefix = '{{ formset.prefix }}'; // اسم البادئة لـ formset (مثل 'form-')
+        const totalFormsInput = document.getElementById(`id_${formsetPrefix}-TOTAL_FORMS`); // حقل إدارة العدد الإجمالي للنماذج
+        if (!totalFormsInput) {
+            console.error("لم يتم العثور على حقل TOTAL_FORMS!");
             return;
         }
-        const emptyRowHtml = templateHolder.querySelector('tr').innerHTML;
-        const totalFormsInput = document.getElementById("id_{{ formset.prefix }}-TOTAL_FORMS"); // Use prefix
-        if (!totalFormsInput) {
-             console.error("TOTAL_FORMS input not found!");
-             return;
-        }
-        const currentCount = parseInt(totalFormsInput.value);
-        const newRowHtml = emptyRowHtml.replace(/__prefix__/g, currentCount);
+        let currentCount = parseInt(totalFormsInput.value);
 
-        const newRow = document.createElement("tr");
-        newRow.classList.add("invoice-item");
-        newRow.innerHTML = newRowHtml;
-        invoiceItemsTbody.appendChild(newRow);
+        // الحصول على HTML النموذج الفارغ واستبدال '__prefix__' بالعدد الحالي
+        const template = document.getElementById('empty-form-template').innerHTML.replace(/__prefix__/g, currentCount);
 
-        // Initialize Tom Select for the new row's product select
-        const newProductSelect = newRow.querySelector('select[name$="-product"]');
-        if (newProductSelect) {
-            initializeProductSelect(newProductSelect);
-        } else {
-            console.warn("New product select not found in added row.");
+        // إضافة الصف الجديد إلى الجدول
+        const newRow = invoiceItemsTbody.insertRow();
+        newRow.innerHTML = template;
+        newRow.classList.add("invoice-item"); // إضافة الكلاس للتعرف عليه
+
+        // تهيئة Tom Select للمنتج في الصف الجديد
+        const productSelectInNewRow = newRow.querySelector('select[name$="-product"]');
+        if (productSelectInNewRow) {
+            initializeProductSelect(productSelectInNewRow);
         }
 
-        // Increment the total forms count
+        // زيادة العدد الإجمالي للنماذج
         totalFormsInput.value = currentCount + 1;
-
-        // Initial calculation after adding row might be needed if defaults exist
-        updateSummary();
     });
 
-    // --- Remove Row Handling ---
-    function handleRemoveRow(row) {
-        const deleteCheckbox = row.querySelector('input[name$="-DELETE"]');
-        const productSelect = row.querySelector('select[name$="-product"]');
-
-        // Destroy Tom Select instance if it exists
-        if (productSelect && productSelect.tomselect) {
-            const instanceId = productSelect.id || productSelect.name;
-            // console.log('Destroying TomSelect for:', instanceId);
-            productSelect.tomselect.destroy();
-            delete tomSelectInstances[instanceId]; // Remove from our tracking object
-        }
-
-        if (deleteCheckbox) {
-            // If the row was dynamically added (doesn't have a real ID/PK yet), remove it completely.
-            // Otherwise, just check the DELETE box and hide it. Django will handle deletion on save.
-            const idInput = row.querySelector('input[name$="-id"]'); // Check for the hidden ID input
-            if (!idInput || !idInput.value) {
-                 row.remove(); // Remove dynamically added row completely
-                 // Note: We don't decrement TOTAL_FORMS here. Django handles it based on submitted forms vs initial.
-            } else {
+    // التعامل مع زر حذف الصف (باستخدام تفويض الأحداث)
+    invoiceItemsTbody.addEventListener('click', function(e) {
+        const removeButton = e.target.closest('.remove-item');
+        if (removeButton) {
+            const row = removeButton.closest('tr.invoice-item');
+            const deleteCheckbox = row.querySelector('input[name$="-DELETE"]');
+            if (deleteCheckbox) {
+                // إذا كان البند موجوداً مسبقاً في قاعدة البيانات، فقط حدد خانة الحذف
                 deleteCheckbox.checked = true;
-                row.style.display = 'none'; // Hide the row visually
+                row.style.display = 'none'; // إخفاء الصف بصرياً
+            } else {
+                // إذا كان الصف مضافاً حديثاً ولم يتم حفظه بعد، قم بإزالته تماماً
+                row.remove();
             }
-        } else {
-            // Fallback if no DELETE checkbox (shouldn't happen with can_delete=True)
-            row.remove();
+            // إعادة حساب الملخص بعد حذف صف
+            updateInvoiceSummary();
         }
+    });
 
-        // Update calculations after marking for deletion or removing
-        updateSummary();
-    }
-
-
-    // ==================================================
-    // Customer Modal AJAX Handling
-    // ==================================================
+    // التعامل مع إضافة عميل جديد عبر Modal (AJAX)
     const customerForm = document.getElementById('customerForm');
     const customerModalElement = document.getElementById('customerModal');
     const mainCustomerSelect = document.getElementById('{{ form.customer.id_for_label }}');
 
     if (customerForm && customerModalElement && mainCustomerSelect) {
         customerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+            e.preventDefault(); // منع الإرسال التقليدي للفورم
             const formData = new FormData(this);
 
-            fetch(this.action, { // Use form's action URL
+            fetch(this.action, { // استخدام عنوان URL الموجود في سمة action للفورم
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': formData.get('csrfmiddlewaretoken') // Ensure CSRF token is sent
+                    'X-Requested-With': 'XMLHttpRequest', // للإشارة إلى أن الطلب هو AJAX
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken') // إرسال CSRF token
                 }
             })
-            .then(response => response.json())
+            .then(response => response.json()) // تحويل الاستجابة إلى JSON
             .then(data => {
                 if (data.success) {
-                    // Add the new customer to the main dropdown
-                    const newOption = new Option(data.customer_name, data.customer_id, false, true); // text, value, defaultSelected, selected
+                    // إضافة العميل الجديد إلى القائمة المنسدلة الرئيسية
+                    const newOption = new Option(data.customer_name, data.customer_id, true, true); // النص، القيمة، افتراضياً لا تحدد، تحدد الآن
                     mainCustomerSelect.appendChild(newOption);
-                    // mainCustomerSelect.value = data.customer_id; // Already set by 'selected=true'
+                    // mainCustomerSelect.value = data.customer_id; // تحديد الخيار الجديد تلقائياً
 
-                    // Close the modal
+                    // إغلاق الـ Modal
                     const modal = bootstrap.Modal.getInstance(customerModalElement) || new bootstrap.Modal(customerModalElement);
                     modal.hide();
 
-                    // Reset the modal form
+                    // إعادة تعيين الفورم داخل الـ Modal
                     this.reset();
-                    // Optionally clear previous error messages in the modal here
+                    // يمكنك إضافة منطق لمسح رسائل الخطأ السابقة هنا إذا كنت تعرضها بشكل ديناميكي
 
                 } else {
-                    // Handle errors - Display them within the modal
-                    console.error('Error adding customer:', data.errors);
-                    // You could inject error messages next to the relevant fields in the modal
-                    alert('خطأ في إضافة العميل: \n' + JSON.stringify(data.errors)); // Simple alert for now
+                    // التعامل مع الأخطاء: عرضها للمستخدم
+                    console.error('خطأ في إضافة العميل:', data.errors);
+                    // مثال بسيط: عرض رسالة تنبيه
+                    alert('حدث خطأ أثناء إضافة العميل:\n' + JSON.stringify(data.errors));
+                    // يمكنك تحسين هذا بعرض الأخطاء بجوار الحقول المقابلة داخل الـ Modal
                 }
             })
             .catch(error => {
-                console.error('Network or server error:', error);
+                console.error('خطأ في الشبكة أو الخادم:', error);
                 alert('حدث خطأ غير متوقع أثناء الاتصال بالخادم.');
             });
         });
     }
 
+    // 4. التهيئة الأولية عند تحميل الصفحة
+    // تهيئة Tom Select لجميع المنتجات الموجودة
+    document.querySelectorAll('#invoice-items-tbody tr.invoice-item').forEach(row => {
+        initializeProductSelect(row.querySelector('select[name$="-product"]'));
+        // تحديث الوحدات والحسابات للبنود الموجودة مسبقاً
+        updateUnitOptions(row);
+        updateRowCalculations(row); // ضروري إذا كانت هناك قيم افتراضية أو بنود محفوظة
+    });
 
-    // ==================================================
-    // Initial Setup Calls
-    // ==================================================
+    // إجراء الحسابات الأولية عند تحميل الصفحة
+    updateInvoiceSummary();
 
-    // Set default date/time if the field is empty
+    // تعيين التاريخ الحالي إذا كان الحقل فارغاً (اختياري)
     let dateInput = mainInvoiceForm.querySelector('input[type="datetime-local"][name="{{ form.invoice_date.html_name }}"]');
     if (dateInput && !dateInput.value) {
         let now = new Date();
-        // Optional: Adjust for specific timezone if server/client mismatch is an issue
-        // Example for UTC+3 (e.g., Saudi Arabia Time) - Be careful with DST if applicable
-        // const offset = 3 * 60 * 60 * 1000;
-        // let localDate = new Date(now.getTime() + offset);
-        // dateInput.value = localDate.toISOString().slice(0, 16);
-
-        // Simpler: Use local time directly formatted for the input
         let year = now.getFullYear();
         let month = (now.getMonth() + 1).toString().padStart(2, '0');
         let day = now.getDate().toString().padStart(2, '0');
@@ -780,10 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
-    // Initial calculation on page load
-    updateSummary();
-
-}); // End DOMContentLoaded
+}); // نهاية DOMContentLoaded
 </script>
 
 {% endblock %}

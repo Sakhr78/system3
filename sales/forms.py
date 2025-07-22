@@ -10,22 +10,26 @@ from invoices.models import Invoice, InvoiceItem, Product
 
 from django.conf import settings
 
-
-# فورم فاتورة المبيعات
-
-#from django.utils import timezone
+# في invoices/forms.py
 
 
+# ==============================================================================
+# فورم الفاتورة الرئيسية
+# ==============================================================================
 class SalesInvoiceForm(forms.ModelForm):
+    """
+    فورم الفاتورة الرئيسية. هذا الكود سيعمل بشكل جيد مع النظام الجديد
+    ولا يحتاج إلى تعديل جوهري.
+    """
     class Meta:
         model = Invoice
         fields = [
             'customer', 'invoice_type', 'invoice_number', 'invoice_date',
-            'payment_method', 'notes', 'subtotal_before_discount', 'discount_percentage',
-            'discount', 'subtotal_before_tax', 'tax_rate', 'tax_amount', 'total_amount',
+            'payment_method', 'notes', 'status', 
+            # الحقول المالية سيتم حسابها تلقائياً، ولكن يمكن إظهارها للقراءة فقط إذا أردت
+            'subtotal_before_discount', 'discount_percentage', 'discount', 
+            'subtotal_before_tax', 'tax_rate', 'tax_amount', 'total_amount',
             'qr_code', 'return_reason', 'original_invoice',
-            # أضف حقل الحالة هنا
-            'status'
         ]
         widgets = {
             'customer': forms.Select(attrs={'class': 'form-control'}),
@@ -34,111 +38,84 @@ class SalesInvoiceForm(forms.ModelForm):
             'original_invoice': forms.HiddenInput(),
             'invoice_number': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'إدخال رقم الفاتورة أو سيقوم النظام بإنشائه تلقائيًا.'
+                'placeholder': 'سيتم إنشاؤه تلقائياً إذا تُرك فارغاً'
             }),
-            'invoice_date': forms.DateTimeInput(attrs={
-                'type': 'datetime-local',
-                'class': 'form-control'
-            }),
+            'invoice_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'payment_method': forms.Select(attrs={'class': 'form-control'}),
-            'notes': forms.Textarea(attrs={
-                'rows': 3,
-                'class': 'form-control',
-                'placeholder': 'أية ملاحظات'
-            }),
-            'subtotal_before_discount': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01'
-            }),
-            'discount_percentage': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01'
-            }),
-            'discount': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01'
-            }),
-            'subtotal_before_tax': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01'
-            }),
-            'tax_rate': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01'
-            }),
-            'tax_amount': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01'
-            }),
-            'total_amount': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01'
-            }),
-            'qr_code': forms.FileInput(attrs={'class': 'form-control'}),
-
-            # جعل الحقل status Select
+            'notes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'ملاحظات...'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
+            # من الأفضل جعل الحقول المالية للقراءة فقط في الفورم لأن JS يتولى حسابها
+            'subtotal_before_discount': forms.NumberInput(attrs={'class': 'form-control', 'readonly': True}),
+            'discount': forms.NumberInput(attrs={'class': 'form-control', 'readonly': True}),
+            'subtotal_before_tax': forms.NumberInput(attrs={'class': 'form-control', 'readonly': True}),
+            'tax_amount': forms.NumberInput(attrs={'class': 'form-control', 'readonly': True}),
+            'total_amount': forms.NumberInput(attrs={'class': 'form-control', 'readonly': True}),
+            # الحقول التي يتحكم بها المستخدم
+            'discount_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'tax_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'qr_code': forms.HiddenInput(), # غالباً ما يتم إنشاؤه في الخادم
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # مثال: تعيين القيمة الافتراضية لحقل invoice_type إلى 'sales'
-        self.fields['customer'].empty_label = "اختار عميل"
+        if self.fields.get('customer'):
+            self.fields['customer'].empty_label = "--- اختر عميلاً ---"
         self.fields['invoice_type'].initial = 'sales'
-        self.fields['invoice_type'].required = False
-        self.instance.invoice_type = 'sales'
-
-        # إذا أردت أن تبدأ الفاتورة بحالة 'draft' دائمًا
-        # يمكنك ضبط ذلك أيضًا:
-        self.fields['status'].initial = 'draft'
-        self.instance.status = 'draft'
 
 
-
+# ==============================================================================
+# فورم بنود الفاتورة (مع التعديل الطفيف المقترح)
+# ==============================================================================
 class InvoiceItemForm(forms.ModelForm):
+    """
+    فورم بنود الفاتورة. تم تعديل الـ label ليعكس المعنى الصحيح.
+    """
+    # هذا هو التحسين الرئيسي: تعديل الـ label.
     unit_price = forms.DecimalField(
+        label="الأفرادي (سعر الوحدة الأساسية)", # <-- تعديل هنا
         decimal_places=2,
-        label="السعر ",
-        widget=forms.NumberInput(attrs={'class': 'form-control'})  # السماح بتعديل السعر
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'placeholder': 'سعر الياردة'
+            })
     )
 
     class Meta:
         model = InvoiceItem
+        # الحقول التي ستظهر في كل صف من بنود الفاتورة.
+        # لاحظ أننا لا ندرج base_quantity_calculated أو total_before_tax لأنهما للقراءة فقط.
         fields = ['product', 'quantity', 'unit', 'unit_price']
         widgets = {
             'product': forms.Select(attrs={'class': 'form-control'}),
-            'quantity': forms.NumberInput(attrs={
-                'min': '1',
-                'class': 'form-control',
-                'placeholder': '1'
-            }),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'الكمية'}),
             'unit': forms.Select(attrs={'class': 'form-control'}),
         }
-
+        labels = {
+            'product': 'المنتج (البيان)',
+            'quantity': 'الكمية (بالوحدة المختارة)', # مثلاً: كمية الطاقات
+            'unit': 'الوحدة',
+        }
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # إزالة خاصية readonly من حقل unit_price لجعله قابلًا للتعديل
-        self.fields['unit_price'].widget.attrs['readonly'] = False
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        instance.full_clean()
-        if commit:
-            instance.save()
-        return instance
+        if self.fields.get('unit'):
+             self.fields['unit'].empty_label = "--- اختر وحدة ---"
+        if self.fields.get('product'):
+            self.fields['product'].empty_label = "--- اختر منتجاً ---"
 
 
-
-
+# ==============================================================================
+# FormSet لربط بنود الفاتورة مع الفاتورة الرئيسية
+# ==============================================================================
 InvoiceItemFormSet = inlineformset_factory(
-    Invoice, InvoiceItem,
+    Invoice, 
+    InvoiceItem,
     form=InvoiceItemForm,
-    extra=0,
-    
-    can_delete=True
+    extra=1, # يبدأ بصف واحد فارغ
+    can_delete=True,
+    min_num=1 # يجب أن تكون هناك بند واحد على الأقل
 )
-
-
 
 
 

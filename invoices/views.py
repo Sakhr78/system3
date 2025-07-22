@@ -130,47 +130,77 @@ from django.conf import settings
 from reportlab.pdfbase import pdfmetrics  
 from reportlab.pdfbase.ttfonts import TTFont  
 
+# في ملف views.py
 
 import io
 import os
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer, Image
 from reportlab.lib import colors
 from reportlab.lib.styles import ParagraphStyle
-from .models import Invoice
+from .models import Invoice, InvoiceItem # تأكد من استيراد InvoiceItem
 from django.urls import reverse
 
+from num2words import num2words
+from decimal import Decimal, ROUND_HALF_UP
 
+# ==============================================================================
+# 1) دالة تحويل المبلغ إلى نص عربي مفصل (تبقى كما هي)
+# ==============================================================================
+def convert_amount_to_arabic_words(amount):
+    """
+    تحويل مبلغ مالي إلى نص عربي مفصل بالريال والهللة بشكل ديناميكي.
+    """
+    try:
+        amount = Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    except (ValueError, TypeError):
+        return "المبلغ غير صالح"
 
+    riyals = int(amount)
+    halalas = int((amount - riyals) * 100)
 
-from .utils import convert_number_to_words
+    riyals_text = num2words(riyals, lang='ar').replace(" فاصلة", "").strip()
+    final_text = f"{riyals_text} ريال سعودي"
 
+    if halalas > 0:
+        halalas_text = num2words(halalas, lang='ar').replace(" فاصلة", "").strip()
+        final_text += f" و {halalas_text} هللة"
+    else:
+        final_text += " فقط لا غير"
+
+    return final_text
+
+# ==============================================================================
+# 2) تحديث دالة عرض الفاتورة لاستخدام الدالة الجديدة وتمرير البيانات الصحيحة
+# ==============================================================================
 def invoice_print_view(request, invoice_id):
     """
-    عرض صفحة HTML لطباعة الفاتورة مع تحويل القيم إلى نصوص مكتوبة
+    عرض صفحة HTML لطباعة الفاتورة مع تحويل القيم إلى نصوص مكتوبة.
     """
     invoice = get_object_or_404(Invoice, id=invoice_id)
+
+    # --- هذا هو الجزء الذي تم تعديله ---
+    # نستخدم الدالة الجديدة لتحويل المبلغ الإجمالي فقط
+    total_in_words_formatted = convert_amount_to_arabic_words(invoice.total_amount)
+    
+    # حساب إجمالي الكمية بالوحدة الأساسية (ياردة)
+    total_base_quantity = sum(item.base_quantity_calculated for item in invoice.invoice_items.all())
 
     context = {
         'invoice': invoice,
         'title': f'طباعة الفاتورة {invoice.invoice_number}',
-        'subtotal_words': convert_number_to_words(invoice.subtotal_before_discount),
-        'discount_words': convert_number_to_words(invoice.discount),
-        'subtotal_after_discount_words': convert_number_to_words(invoice.subtotal_before_tax),
-        'tax_words': convert_number_to_words(invoice.tax_amount),
-        'total_words': convert_number_to_words(invoice.total_amount),
+        
+        # تمرير النص المنسق والجديد إلى القالب
+        'total_words': total_in_words_formatted,
+        
+        # تمرير إجمالي الكمية بالوحدة الأساسية (ياردة)
+        'total_base_quantity': total_base_quantity,
     }
+    
+    # تأكد من أن اسم القالب صحيح
     return render(request, 'print.html', context)
-
-
-
-
-
-
-
-
 
 
 

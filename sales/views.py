@@ -76,71 +76,108 @@ def ajax_search_sales_invoices(request):
     return JsonResponse({'results': data})
 
 
+# في invoices/views.py
 
+from django.shortcuts import render, redirect
+from django.db import transaction
+from django.contrib import messages
+import json
+
+# تأكد من استيراد كل النماذج والفورمز التي نحتاجها
+from .forms import *
+# ... (احتفظ بباقي دوال العرض الأخرى مثل add_customer, list, etc.)
 
 def create_sales_invoice(request):
-    customer_form = CustomerForm()
+    """
+    دالة عرض محسّنة لإنشاء فاتورة مبيعات، مع تحديث صحيح للمخزون
+    وتجهيز دقيق للبيانات من أجل JavaScript.
+    """
+    customer_form = CustomerForm()  # للـ Modal
+
     if request.method == 'POST':
+        # استخدام prefix 'items' كما هو محدد في القالب
         form = SalesInvoiceForm(request.POST, request.FILES)
         formset = InvoiceItemFormSet(request.POST, prefix='items')
+
         if form.is_valid() and formset.is_valid():
             try:
                 with transaction.atomic():
-                    # احفظ الفاتورة مع ربطها بالعميل
+                    # 1. حفظ الفاتورة الرئيسية
                     invoice = form.save(commit=False)
-                    invoice.customer = form.cleaned_data['customer']
+                    invoice.invoice_type = 'sales'
                     invoice.save()
-                    
-                    formset.instance = invoice
-                    formset.save()
-                    
-                    # منطق تحديث المخزون (يبقى كما هو)
-                    for item_form in formset:
-                        if not item_form.cleaned_data.get('DELETE', False):
-                            item = item_form.save(commit=False)
-                            product = item.product
-                            base_quantity = item.quantity
-                            
-                            #if product.stock < base_quantity:
-                            #    raise Exception(f"لا توجد كمية كافية للمنتج {product.name_ar}")
-                            product.stock -= int(base_quantity)
-                            product.save()
 
+                    # 2. حفظ بنود الفاتورة وربطها بالفاتورة
+                    # Django سيقوم تلقائياً باستدعاء دالة save لكل item
+                    # والتي ستقوم بحساب base_quantity_calculated و total_before_tax
+                    formset.instance = invoice
+                    items = formset.save() # items هنا هي قائمة بكل الـ InvoiceItem instances
+
+                    # 3. تحديث المخزون بالطريقة الصحيحة
+                    for item in items:
+                        product = item.product
+                        # **نستخدم الكمية المحسوبة بالوحدة الأساسية**
+                        quantity_to_deduct = item.base_quantity_calculated
+                        
+                        if product.stock < quantity_to_deduct:
+                            # نوقف العملية بالكامل إذا لم يكن المخزون كافياً
+                            raise Exception(f"لا توجد كمية كافية ({product.stock}) للمنتج {product.name_ar}. المطلوب: {quantity_to_deduct}")
+                        
+                        product.stock -= quantity_to_deduct
+                        product.save(update_fields=['stock'])
+
+                    # 4. تحديث إجماليات الفاتورة بعد حفظ كل البنود وتحديث المخزون
+                    # (هذه الخطوة مهمة إذا كانت calculate_totals تعتمد على بنود محفوظة)
+                    invoice.calculate_totals() 
+                    
                 messages.success(request, 'تم إنشاء فاتورة المبيعات بنجاح.')
+                # قم بالتوجيه إلى صفحة الطباعة أو التفاصيل
                 return redirect('invoice_print_view', invoice_id=invoice.id)
+
             except Exception as e:
+                # إذا حدث أي خطأ، transaction.atomic سيقوم بإلغاء كل شيء
                 messages.error(request, f'حدث خطأ: {str(e)}')
         else:
-            messages.error(request, 'يرجى تصحيح الأخطاء في النموذج')
-    else:
+            # عرض الأخطاء للمستخدم بطريقة واضحة
+            error_msg = "يرجى تصحيح الأخطاء التالية: " + str(form.errors) + str(formset.errors)
+            messages.error(request, error_msg)
+    else: # GET Request
         form = SalesInvoiceForm()
-        formset = InvoiceItemFormSet(prefix='items')
-    
-    # الباقي يبقى كما هو
-    products = Product.objects.all()
-    product_prices = {str(product.id): str(product.price) for product in products}
-    product_units = {str(product.id): product.unit.abbreviation for product in products}
-    conversion_units = {
-        str(conv.id): {
-            "abbr": conv.larger_unit_name if hasattr(conv, 'larger_unit_name') else conv.conversion_unit,
-            "factor": str(conv.conversion_factor)
-        }
-        for conv in UnitConversion.objects.all()
-    }
-    context = {
-        'customer_form': customer_form,
+        # نمرر queryset فارغ لأننا سنضيف الصفوف بـ JS
+        formset = InvoiceItemFormSet(prefix='items', queryset=InvoiceItem.objects.none())
 
+    # --------------------------------------------------------------------------
+    #  تجهيز البيانات لـ JavaScript (الجزء الأهم ليتوافق مع القالب)
+    # --------------------------------------------------------------------------
+    products = Product.objects.select_related('unit').all()
+    
+    # 1. قاموس أسعار المنتجات (سعر الوحدة الأساسية "الأفرادي")
+    product_prices_json = json.dumps({str(p.id): str(p.price) for p in products})
+    
+    # 2. قاموس بيانات المنتجات الشامل للوحدات وعوامل التحويل
+    product_data = {}
+    for p in products:
+        if p.unit:
+            conversions = UnitConversion.objects.filter(base_unit=p.unit)
+            product_data[str(p.id)] = {
+                "base_unit_name": p.unit.name,
+                "conversions": [
+                    {"id": c.id, "name": c.larger_unit_name, "factor": str(c.conversion_factor)}
+                    for c in conversions
+                ]
+            }
+    product_data_json = json.dumps(product_data)
+
+    context = {
         'form': form,
         'formset': formset,
-        'title': 'إنشاء فاتورة مبيعات - النظام المحاسبي',
-        'product_prices': json.dumps(product_prices),
-        'product_units': json.dumps(product_units),
-        'conversion_units': json.dumps(conversion_units),
+        'customer_form': customer_form,
+        'title': 'إنشاء فاتورة مبيعات',
+        # تمرير بيانات JSON إلى القالب
+        'product_prices_json': product_prices_json,
+        'product_data_json': product_data_json,
     }
     return render(request, 'sales/create_invoice.html', context)
-
-
-
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -165,6 +202,11 @@ def add_customer(request):
     return JsonResponse({'success': False, 'errors': 'Invalid request method'})
 
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.db import transaction
+from django.contrib import messages
+import json
+
 def update_sales_invoice(request, invoice_id):
     """
     دالة عرض لتحديث فاتورة مبيعات موجودة.
@@ -173,90 +215,164 @@ def update_sales_invoice(request, invoice_id):
 
     if request.method == 'POST':
         form = SalesInvoiceForm(request.POST, request.FILES, instance=invoice)
+        # تأكد من استخدام البادئة الصحيحة هنا 'items'
         formset = InvoiceItemFormSet(request.POST, instance=invoice, prefix='items')
-   #     print("request.POST content:", request.POST.dict())
+
+        # طباعة محتوى POST لتصحيح الأخطاء (للتطوير فقط)
+        # print("request.POST content:", request.POST.dict())
 
         if form.is_valid() and formset.is_valid():
             try:
                 with transaction.atomic():
-                    invoice = form.save(commit=False)
-                    invoice.customer = form.cleaned_data['customer']
-                    invoice.save()
+                    invoice_instance = form.save(commit=False)
+                    # قد تحتاج لضبط بعض الحقول يدوياً إذا لم يتم ربطها تلقائياً
+                    # invoice_instance.customer = form.cleaned_data['customer']
 
-                    # تخزين العناصر القديمة لمقارنة التعديلات
-                    old_items = {item.id: item for item in invoice.invoice_items.all()}
-                    formset.instance = invoice
-                    formset_items = formset.save(commit=False)
+                    # حفظ الفاتورة الرئيسية قبل حفظ البنود
+                    invoice_instance.save()
 
-                    for item in formset_items:
-                        if item.id:
-                            old_item = old_items.pop(item.id, None)
-                        else:
-                            old_item = None
+                    # --- معالجة بنود الفاتورة وتحديث المخزون ---
+                    # استرجاع العناصر الحالية للفاتورة لتتبع التغييرات
+                    # استخدم set لتسهيل البحث والمقارنة
+                    current_items_map = {item.id: item for item in invoice.invoice_items.all()}
+                    
+                    # الحصول على البنود التي تم إرسالها في الفورم
+                    posted_item_ids = set()
 
-                        product = item.product
-                        base_quantity = item.quantity
+                    # حفظ البنود المعدلة أو الجديدة
+                    for form_item in formset:
+                        if form_item.cleaned_data:
+                            item = form_item.save(commit=False)
+                            item.invoice = invoice_instance # ربط البند بالفاتورة
 
-                        if old_item:
-                            # حساب الفرق بين الكمية الجديدة والقديمة
-                            quantity_difference = base_quantity - old_item.quantity
-                            product.stock -= int(quantity_difference)
-                        else:
-                            if product.stock < base_quantity:
-                                raise Exception(f"لا توجد كمية كافية للمنتج {product.name_ar}")
-                            product.stock -= int(base_quantity)
+                            product = item.product # المنتج المرتبط بالبند
+                            
+                            # --- معالجة المخزون بناءً على الوحدة الأساسية ---
+                            # افترض أن لديك حقل 'base_quantity_calculated' في نموذج InvoiceItem
+                            # إذا لم يكن موجوداً، ستحتاج إلى تعديل النموذج أو حسابه هنا
+                            
+                            # إذا كان الحقل غير موجود، قم بتعطيل هذا المنطق مؤقتاً
+                            # أو احسبه بناءً على البيانات المتاحة
+                            # base_quantity_calculated = item.quantity * get_conversion_factor(item.unit, product)
 
-                        if product.stock < 0:
-                            raise Exception(f"الكمية في المخزون للمنتج {product.name_ar} أصبحت أقل من صفر.")
+                            # استخدم القيمة المحسوبة للمخزون (افترض وجود الحقل)
+                            # تأكد من أن هذا الحقل موجود في نموذج InvoiceItem
+                            base_quantity_to_save = item.base_quantity_calculated # استخدم القيمة المحسوبة
 
-                        item.save()
+                            if item.id: # إذا كان هذا البند موجوداً مسبقاً
+                                posted_item_ids.add(item.id)
+                                old_item = current_items_map.get(item.id)
+                                
+                                if old_item:
+                                    # تم تعديل بند موجود
+                                    stock_change = base_quantity_to_save - old_item.base_quantity_calculated
+                                    
+                                    # تحديث المخزون
+                                    if product.stock is None: product.stock = 0 # تأكد من أن المخزون ليس فارغاً
+                                    product.stock -= stock_change
+                                    
+                                    if product.stock < 0:
+                                        # إذا تجاوز النقص صفراً، أطلق استثناء
+                                        raise Exception(f"المخزون غير كافٍ للمنتج '{product.name_ar}'. مطلوب: {base_quantity_to_save}, متوفر: {old_item.base_quantity_calculated} (+ {product.stock + stock_change})")
+
+                                    item.save() # حفظ البند المعدل
+
+                                else:
+                                     # هذا البند له ID لكنه غير موجود في الفاتورة الحالية (حالة غير متوقعة)
+                                     messages.warning(request, f"تم العثور على بند ذو ID {item.id} ولكن لم يتم العثور عليه في الفاتورة الحالية.")
+                                     # قد تحتاج إلى التعامل مع هذا كبند جديد أو تجاهله
+
+                            else:
+                                # بند جديد
+                                if product.stock is None: product.stock = 0
+                                if product.stock < base_quantity_to_save:
+                                    raise Exception(f"المخزون غير كافٍ للمنتج '{product.name_ar}'. مطلوب: {base_quantity_to_save}, متوفر: {product.stock}")
+                                
+                                product.stock -= base_quantity_to_save
+                                item.save() # حفظ البند الجديد
+
+                            product.save() # حفظ تحديثات المخزون للمنتج
+
+                    # --- التعامل مع البنود المحذوفة ---
+                    # العناصر التي كانت موجودة ولكنها غير موجودة في البنود المرسلة
+                    deleted_item_ids = set(current_items_map.keys()) - posted_item_ids
+                    for item_id in deleted_item_ids:
+                        old_item = current_items_map[item_id]
+                        product = old_item.product
+                        
+                        # استعادة الكمية المحذوفة إلى المخزون
+                        if product.stock is None: product.stock = 0
+                        product.stock += old_item.base_quantity_calculated # استخدم القيمة المحسوبة
                         product.save()
+                        
+                        old_item.delete() # حذف البند فعلياً من قاعدة البيانات
 
-                    # استعادة المخزون للعناصر التي تم حذفها
-                 #   for old_item in old_items.values():
-                 #       product = old_item.product
-                 #       product.stock += int(old_item.quantity)
-                 #       product.save()
-                  #      old_item.delete()
-
-                    invoice.calculate_totals()
-                    invoice.save()
+                    # بعد معالجة كل البنود (إضافة، تعديل، حذف)
+                    invoice_instance.calculate_totals() # تأكد أن هذه الدالة تستخدم base_quantity_calculated
+                    invoice_instance.save()
 
                     messages.success(request, 'تم تحديث فاتورة المبيعات بنجاح.')
-                    return redirect('sales_invoice_detail', invoice_id=invoice.id)
+                    # قد تحتاج لتغيير 'sales_invoice_detail' إلى مسار صحيح
+                    return redirect('sales_invoice_detail', invoice_id=invoice_instance.id) 
 
             except Exception as e:
+                # في حالة حدوث خطأ، لا تقم بالحفظ وارجع رسالة خطأ
+                # يمكنك هنا استعادة المخزون للبنود التي تم تعديلها جزئياً إذا لزم الأمر
+                # print(f"Form Errors: {form.errors.as_json()}")
+                # print(f"Formset Errors: {formset.errors.as_json()}")
                 messages.error(request, f'حدث خطأ أثناء تحديث الفاتورة: {str(e)}')
+                # قد تحتاج لإعادة تهيئة الفورم والـ formset هنا إذا كنت تريد عرضها مع الأخطاء
+                # form = SalesInvoiceForm(instance=invoice) # إعادة تهيئة الفورم
+                # formset = InvoiceItemFormSet(instance=invoice, prefix='items') # إعادة تهيئة الـ formset
+
         else:
+            # إذا كان الفورم أو الـ formset غير صالحين
+            print("Form Errors:", form.errors)
             print("Formset Errors:", formset.errors)
             messages.error(request, 'يرجى تصحيح الأخطاء في النموذج.')
+            # أعد تهيئة الفورم والـ formset لعرض الأخطاء للمستخدم
+            # form = SalesInvoiceForm(instance=invoice)
+            # formset = InvoiceItemFormSet(instance=invoice, prefix='items')
+            
     else:
+        # طلب GET: عرض الفورم مع البيانات الحالية
         form = SalesInvoiceForm(instance=invoice)
         formset = InvoiceItemFormSet(instance=invoice, prefix='items')
 
-    products = Product.objects.all()
-    product_prices = {str(product.id): str(product.price) for product in products}
-    product_units = {str(product.id): product.unit.abbreviation for product in products}
-    conversion_units = {
-        str(conv.id): {
+    # --- تجهيز البيانات اللازمة لـ JavaScript ---
+    # يجب التأكد من استرجاع البيانات اللازمة (المنتجات، الأسعار، الوحدات)
+    # بنفس الطريقة التي تم بها في صفحة الإنشاء
+    products = Product.objects.all() # أو المنتجات ذات الصلة فقط
+    product_prices = {}
+    product_units = {}
+    # تأكد من أن لديك علاقات صحيحة وأن هذه الحقول موجودة
+    for product in products:
+        product_prices[str(product.id)] = str(product.price) # سعر الوحدة الأساسية
+        product_units[str(product.id)] = product.unit.abbreviation if product.unit else "" # اختصار الوحدة الأساسية
+        
+    # تأكد من أن UnitConversion لديه الحقول المطلوبة (id, name, factor, larger_unit_name)
+    # ونموذج InvoiceItem لديه الحقول: product, quantity, unit, unit_price, base_quantity_calculated, id, DELETE
+    conversion_units = {}
+    for conv in UnitConversion.objects.all():
+         # تأكد من أن الحقول موجودة في نموذج UnitConversion
+         conversion_units[str(conv.id)] = {
             "abbr": conv.larger_unit_name if hasattr(conv, 'larger_unit_name') else conv.conversion_unit,
             "factor": str(conv.conversion_factor)
         }
-        for conv in UnitConversion.objects.all()
-    }
+
     context = {
         'form': form,
         'formset': formset,
-        'title': 'تحديث فاتورة مبيعات - النظام المحاسبي',
+        'title': f'تعديل فاتورة رقم {invoice.invoice_number}',
         'invoice_id': invoice_id,
-        'product_prices': json.dumps(product_prices),
-        'product_units': json.dumps(product_units),
-        'conversion_units': json.dumps(conversion_units),
+        'invoice': invoice, # لتمرير كائن الفاتورة للعرض (مثل الحالة)
+        # تمرير البيانات كـ JSON Strings لـ JavaScript
+        'product_prices_json': json.dumps(product_prices),
+        'product_units_json': json.dumps(product_units),
+        'conversion_units_json': json.dumps(conversion_units),
     }
+    # استخدم اسم القالب الصحيح لصفحة التعديل
     return render(request, 'sales/edit_invoice.html', context)
-
-
-
 
 
 def delete_sales_invoice(request, invoice_id):

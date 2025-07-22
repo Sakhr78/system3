@@ -704,34 +704,40 @@ class Invoice(models.Model):
             raise ValidationError("المجموع الكلي لا يمكن أن يكون أقل من صفر.")
 
 
+
+# في ملف models.py
+
+# ... (الكود الخاص بنماذجك الأخرى مثل Invoice, Product, UnitConversion يبقى كما هو)
+
 class InvoiceItem(models.Model):
+    """
+    نموذج محسّن لبنود الفاتورة يطبق منطق الحساب المعتمد على الوحدة الأساسية.
+    """
     invoice = models.ForeignKey(
         Invoice,
         on_delete=models.CASCADE,
         related_name='invoice_items',
-        verbose_name='الفاتورة',
-        null=True,
-        blank=True
+        verbose_name='الفاتورة'
     )
     product = models.ForeignKey(
         'Product',
         on_delete=models.PROTECT,
         verbose_name='المنتج'
     )
+    
+    # --------------------------------------------------------------------------
+    # الحقول التي يتعامل معها المستخدم في الفورم
+    # --------------------------------------------------------------------------
+    
+    # الكمية بالوحدة التي يختارها المستخدم (مثال: 10 طاقات)
     quantity = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         verbose_name='الكمية',
         default=1
     )
-    base_unit = models.ForeignKey(
-        'Unit',
-        on_delete=models.CASCADE,
-        verbose_name="الوحدة الأساسية",
-        editable=False,
-        null=True,
-        blank=True,
-    )
+    
+    # الوحدة التي يختارها المستخدم (مثال: طاقة، كرتون)
     unit = models.ForeignKey(
         'UnitConversion',
         on_delete=models.SET_NULL,
@@ -739,12 +745,31 @@ class InvoiceItem(models.Model):
         blank=True,
         verbose_name="الوحدة المختارة"
     )
+
+    # سعر الوحدة الأساسية (الأفرادي - سعر الياردة)، قد يعدله المستخدم.
     unit_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name="السعر لكل وحدة",
-        default=0
+        verbose_name="سعر الوحدة الأساسية (إفرادي)",
+        default=0,
+        help_text="هذا هو سعر الوحدة الأصغر دائماً (مثل الياردة أو الحبة)"
     )
+
+    # --------------------------------------------------------------------------
+    # الحقول التي يحسبها النظام تلقائياً (غير قابلة للتعديل من المستخدم)
+    # --------------------------------------------------------------------------
+
+    # **حقل جديد:** لتخزين الكمية المحولة إلى الوحدة الأساسية (مثل: 250 ياردة).
+    # هذا الحقل سيطابق عمود "ياردة" في الفاتورة التي عرضتها.
+    base_quantity_calculated = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        editable=False, 
+        verbose_name='الكمية بالوحدة الأساسية (محسوبة)'
+    )
+
+    # الإجمالي قبل الضريبة للبند الواحد (محسوب بناء على الياردات).
     total_before_tax = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -752,64 +777,69 @@ class InvoiceItem(models.Model):
         editable=False,
         verbose_name='المجموع قبل الضريبة'
     )
-    tax_rate = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        default=15,
-        verbose_name="نسبة الضريبة"
-    )
-    total = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0,
-        editable=False,
-        verbose_name='المجموع النهائي'
-    )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الإنشاء')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='تاريخ التعديل')
 
-    def save(self, *args, **kwargs):
-        if not self.product:
-            raise ValidationError('يجب اختيار منتج')
-
-        from decimal import Decimal
-        self.base_unit = self.product.unit
-        conversion_factor = Decimal('1')
-        if self.unit and self.unit.conversion_factor:
-            conversion_factor = self.unit.conversion_factor
-
-        if not self.unit_price:
-            self.unit_price = self.product.price * conversion_factor
-
-        new_base_price = self.unit_price / conversion_factor
-        if self.product.price != new_base_price:
-            self.product.price = new_base_price
-            self.product.save()
-
-        self.total_before_tax = self.quantity * self.unit_price
-        self.total = self.total_before_tax
-        super().save(*args, **kwargs)
+    def __str__(self):
+        # عرض الوحدة المختارة إذا كانت موجودة، وإلا عرض الوحدة الأساسية للمنتج
+        unit_name = ""
+        if self.unit:
+            unit_name = self.unit.larger_unit_abbreviation
+        elif self.product and self.product.unit:
+            unit_name = self.product.unit.abbreviation
+        return f"{self.product.name_ar} - {self.quantity} {unit_name}"
 
     def clean(self):
         if self.quantity <= 0:
-            raise ValidationError('الكمية يجب أن تكون أكبر من صفر')
+            raise ValidationError('الكمية يجب أن تكون أكبر من صفر.')
         if not self.product_id:
-            raise ValidationError('يجب اختيار منتج')
+            raise ValidationError('يجب اختيار منتج.')
         super().clean()
 
-    def __str__(self):
-        unit_display = ""
-        if self.unit:
-            unit_display = self.unit.larger_unit_name
-        elif self.base_unit:
-            unit_display = self.base_unit.abbreviation
-        return f"{self.product.name_ar} - {self.quantity} {unit_display}"
+    @property
+    def item_tax_amount(self):
+        """
+        خاصية لحساب قيمة الضريبة لكل بند.
+        """
+        if self.invoice and self.invoice.tax_rate:
+            return (self.total_before_tax * self.invoice.tax_rate / Decimal('100')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        return Decimal('0.00')
+    
+    
+    @property
+    def total_with_tax(self):
+        """
+        خاصية لحساب الإجمالي لكل بند بعد إضافة الضريبة.
+        """
+        return self.total_before_tax + self.item_tax_amount
+    
+    def save(self, *args, **kwargs):
+        """
+        دالة الحفظ التي تنفذ المنطق الحسابي الذي ناقشناه.
+        """
+        self.full_clean()  # للتأكد من تطبيق clean() قبل الحفظ
+
+        # 1. تحديد السعر المعتمد (سعر الياردة "الأفرادي")
+        # إذا لم يقم المستخدم بتعديل السعر في الفورم، نأخذه من المنتج مباشرةً.
+        if not self.unit_price or self.unit_price <= 0:
+             self.unit_price = self.product.price
+
+        # 2. تحديد عامل التحويل
+        conversion_factor = Decimal('1')  # الافتراضي هو 1 (عند البيع بالوحدة الأساسية نفسها)
+        if self.unit:  # إذا اختار المستخدم وحدة أكبر مثل "طاقة"
+            conversion_factor = self.unit.conversion_factor
+
+        # 3. حساب الكمية النهائية بالوحدة الأساسية (أهم خطوة)
+        # مثال: 10 (طاقة) * 25 (عامل التحويل) = 250 ياردة
+        self.base_quantity_calculated = self.quantity * conversion_factor
+
+        # 4. حساب الإجمالي قبل الضريبة بناءً على الكمية الأساسية وسعرها
+        # مثال: 250 (ياردة) * 2.20 (سعر الياردة) = 550.00 ريال
+        self.total_before_tax = self.base_quantity_calculated * self.unit_price
+        
+        super().save(*args, **kwargs) # حفظ كل القيم المحسوبة في قاعدة البيانات
 
     class Meta:
-        verbose_name = 'عنصر الفاتورة'
-        verbose_name_plural = 'عناصر الفاتورة'
-
-
+        verbose_name = 'بند فاتورة'
+        verbose_name_plural = 'بنود الفواتير'
 @receiver(post_save, sender=InvoiceItem)
 def update_invoice_totals(sender, instance, **kwargs):
     invoice = instance.invoice
@@ -825,6 +855,8 @@ def update_invoice_totals(sender, instance, **kwargs):
             'total_amount',
             #'qr_code'
         ])
+
+
 
 
 # ==============================================================================

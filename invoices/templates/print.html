@@ -1,12 +1,14 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block content %}
 
 <style>
     /* 
     =================================================================
     * Template: Exact Invoice Replica - Django Integrated
-    * Version: 8.1 (Layout Corrected)
-    * Description: The precise visual design with corrected variable order to match the image.
+    * Version: 8.4 (Layout Corrected with Total With Tax)
+    * Description: The precise visual design with corrected variable order, unit display, item tax display, and total with tax.
     * Print-Optimized to prevent clipping issues.
     =================================================================
     */
@@ -64,12 +66,12 @@
     }
     .header-section { flex: 1; }
     .header-right { text-align: right; }
-    .header-right h3 { font-size: 11pt; font-weight: bold; }
+    .header-right h3 { font-size: 20pt; font-weight: bold; }
     .header-right p { font-size: 9pt; }
     .header-center { flex: 0 0 auto; text-align: center; }
     .logo-s { font-family: 'Times New Roman', Times, serif; font-size: 60pt; font-weight: bold; line-height: 1; }
     .header-left { text-align: left; }
-    .header-left h2 { font-size: 11pt; font-weight: bold; }
+    .header-left h2 { font-size: 15pt; font-weight: bold; }
     .header-left p { font-size: 9pt; }
 
     /* ========== Invoice Title Bar ========== */
@@ -99,7 +101,7 @@
     .summary-label { background-color: #dbe5f1; font-weight: bold; text-align: right; padding-right: 10px; width: 70%; }
 
     /* ========== Total in Words ========== */
-    .total-words { clear: both; text-align: center; font-size: 11pt; color: #d10000; font-weight: bold; margin: 20px 0; padding-top: 10px; }
+    .total-words { clear: both; text-align: right; font-size: 11pt; color: #d10000; font-weight: bold; margin: 20px 0; padding-top: 10px; }
 
     /* ========== Signatures ========== */
     .signatures-container { margin-top: 20px; padding-top: 10px; border-top: 1px solid #000; display: flex; justify-content: space-around; }
@@ -108,10 +110,10 @@
 
     /* ========== Footer ========== */
     .invoice-footer { margin-top: 30px; padding-top: 10px; display: flex; justify-content: space-between; align-items: flex-end; }
-    .bank-details { flex-grow: 1; display: flex; justify-content: flex-end; gap: 20px; font-size: 9pt; line-height: 1.5; }
-    .bank-account { text-align: right; }
+    .bank-details { flex-grow: 1; display: flex; justify-content: center; gap: 20px; font-size: 9pt; line-height: 1.3; font-weight: 700;}
+    .bank-account { text-align: center; }
     .bank-account h4 { font-weight: bold; font-size: 10pt; }
-    .qr-section { text-align: center; margin-left: 20px; }
+    .qr-section { text-align: center; margin-right: 20px; }
     .qr-code img { width: 90px; height: 90px; border: 1px solid #000; margin: 0 auto 5px; }
     .print-info { font-size: 9pt; color: #000; }
 
@@ -244,11 +246,11 @@
                     <tr>
                         <td>{{ forloop.counter }}</td>
                         <td class="description-col">{{ item.product.serial_number|default:"" }} -- {{ item.product.name_ar|default:"-" }}</td>
-                        <td></td> <!-- حقل فارغ لـ "ياردة" -->
+                        <td style="text-align: center;">{{ item.base_quantity_calculated|floatformat:"0g" }}</td>
                         <td style="text-align: center;">{{ item.quantity|floatformat:"0g" }}</td>
                         <td style="text-align: center;">{{ item.unit_price|floatformat:2 }}</td>
-                        <td></td> <!-- حقل فارغ لـ "مبلغ الضريبة" لكل بند -->
-                        <td style="text-align: center;">{{ item.total|floatformat:2 }}</td>
+                        <td style="text-align: center;">{{ item.item_tax_amount|floatformat:2 }}</td>
+                        <td style="text-align: center;">{{ item.total_with_tax|floatformat:2 }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -263,7 +265,7 @@
                 <table class="summary-table">
                     <tr>
                         <td class="summary-label">إجمالي الكمية</td>
-                        <td>{{ invoice.total_quantity|default:"-" }}</td>
+                        <td>{{ total_base_quantity|floatformat:"0g" }}</td>
                     </tr>
                     <tr>
                         <td class="summary-label">المجموع الجزئي فاتورة</td>
@@ -282,6 +284,7 @@
 
             <!-- Total in Words -->
             <div class="total-words">
+                المبلغ المطلوب : 
                 {{ total_words|default:"المبلغ كتابة غير متوفر" }}
             </div>
 
@@ -299,16 +302,6 @@
 
             <!-- Footer -->
             <div class="invoice-footer">
-                <div class="qr-section">
-                    <div class="qr-code">
-                        <img src="{% url 'generate_qr_code' invoice.id %}" alt="QR Code">
-                    </div>
-                    <div class="print-info">
-                        <span>PrintedOn: {% now "d/m/Y" %}</span>
-                        <span>Time: {% now "H:i" %}</span>
-                    </div>
-                </div>
-                <!-- تفاصيل البنك ثابتة كما في التصميم الأصلي 
                 <div class="bank-details">
                      <div class="bank-account">
                         <h4>البنك الاهلي</h4>
@@ -322,7 +315,11 @@
                         <p><strong>رقم الايبان:</strong> SA9180000453608010477547</p>
                     </div>
              </div>
-           -->        <!-- تفاصيل البنك ثابتة كما في التصميم الأصلي -->
+                <div class="qr-section">
+                    <div class="qr-code">
+                        <img src="{% url 'generate_qr_code' invoice.id %}" alt="QR Code">
+                    </div>
+                </div>
             </div>
 
         </div>
